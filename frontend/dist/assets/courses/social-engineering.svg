@@ -1,0 +1,23 @@
+<svg width="800" height="450" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+    <defs>
+        <filter id="glow" height="300%" width="300%" x="-75%" y="-75%">
+            <!-- Shadow offset -->
+            <feMorphology operator="dilate" radius="4" in="SourceAlpha" result="thicken" />
+            <feGaussianBlur in="thicken" stdDeviation="10" result="blurred" />
+            <feFlood flood-color="#FF0055" result="glowColor" />
+            <feComposite in="glowColor" in2="blurred" operator="in" result="softGlow_colored" />
+            <feMerge>
+                <feMergeNode in="softGlow_colored"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    
+    <!-- Transparent Background (No Rect) -->
+
+    <!-- Centered Glowing Graphic (Icon or Custom Path) -->
+    <g filter="url(#glow)">
+        <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="Segoe UI Emoji, Arial, sans-serif" font-size="180" fill="#FF0055">🧠</text>
+    </g>
+    
+</svg>

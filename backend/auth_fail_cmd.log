@@ -1,0 +1,60 @@
+2026-01-16 19:24:42 [[33m'warn'[39m]: ⚠️  JWT_PRIVATE_KEY not configured. Using fallback (DEVELOPMENT ONLY) {"service":"antiphishx-backend"}
+2026-01-16 19:24:42 [[32m'info'[39m]: ✅ JWT Service initialized with HS256 algorithm {"service":"antiphishx-backend"}
+2026-01-16 19:24:42 [[32m'info'[39m]: User registered: test@example.com {"service":"antiphishx-backend"}
+FAIL tests/auth.test.js
+  Authentication Service
+    register
+      √ should register a new user successfully (4 ms)
+      √ should throw error if email already exists (13 ms)
+    login
+      × should login user with correct credentials (7 ms)
+      √ should throw error for invalid credentials (1 ms)
+    refreshAccessToken
+      × should refresh access token with valid refresh token
+
+  ● Authentication Service › login › should login user with correct credentials
+
+    ValidationError: AuditLog validation failed: userId: Cast to ObjectId failed for value "user123" (type string) at path "userId" because of "BSONError"
+
+    [0m [90m 58 |[39m [90m// Static method to log an action[39m
+     [90m 59 |[39m auditLogSchema[33m.[39mstatics[33m.[39mlog [33m=[39m [36mfunction[39m (data) {
+    [31m[1m>[22m[39m[90m 60 |[39m     [36mreturn[39m [36mthis[39m[33m.[39mcreate({
+     [90m    |[39m                 [31m[1m^[22m[39m
+     [90m 61 |[39m         userId[33m:[39m data[33m.[39muserId[33m,[39m
+     [90m 62 |[39m         action[33m:[39m data[33m.[39maction[33m,[39m
+     [90m 63 |[39m         resource[33m:[39m data[33m.[39mresource[33m,[39m[0m
+
+      at model.Object.<anonymous>.Document.invalidate (node_modules/mongoose/lib/document.js:3373:32)
+      at model.$set (node_modules/mongoose/lib/document.js:1490:12)
+      at model.$set (node_modules/mongoose/lib/document.js:1142:16)
+      at model.Document (node_modules/mongoose/lib/document.js:178:12)
+      at model.Model (node_modules/mongoose/lib/model.js:127:12)
+      at new model (node_modules/mongoose/lib/model.js:4865:15)
+      at node_modules/mongoose/lib/model.js:2791:20
+          at Array.map (<anonymous>)
+      at model.create (node_modules/mongoose/lib/model.js:2779:34)
+      at model.create [as log] (src/models/AuditLog.js:60:17)
+      at AuthService.log [as createSessionAndTokens] (src/auth/auth.service.js:198:24)
+      at AuthService.login (src/auth/auth.service.js:154:16)
+      at Object.<anonymous> (tests/auth.test.js:98:28)
+
+  ● Authentication Service › refreshAccessToken › should refresh access token with valid refresh token
+
+    TypeError: session.isValid is not a function
+
+    [0m [90m 246 |[39m         })[33m;[39m
+     [90m 247 |[39m
+    [31m[1m>[22m[39m[90m 248 |[39m         [36mif[39m ([33m![39msession [33m||[39m [33m![39msession[33m.[39misValid()) {
+     [90m     |[39m                                  [31m[1m^[22m[39m
+     [90m 249 |[39m             [36mthrow[39m [36mnew[39m [33mError[39m([32m'Invalid or expired refresh token'[39m)[33m;[39m
+     [90m 250 |[39m         }
+     [90m 251 |[39m[0m
+
+      at AuthService.isValid [as refreshAccessToken] (src/auth/auth.service.js:248:34)
+      at Object.<anonymous> (tests/auth.test.js:130:28)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 3 passed, 5 total
+Snapshots:   0 total
+Time:        1.293 s, estimated 2 s
+Ran all test suites matching /tests\\auth.test.js/i.

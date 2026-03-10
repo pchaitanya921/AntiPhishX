@@ -1,0 +1,21 @@
+FAIL tests/integration/api.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../../src/auth/email.service' from 'tests/integration/api.test.js'
+
+    [0m [90m 20 |[39m jest[33m.[39mmock([32m'../../src/models/Session'[39m)[33m;[39m
+     [90m 21 |[39m jest[33m.[39mmock([32m'../../src/models/AuditLog'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 22 |[39m jest[33m.[39mmock([32m'../../src/auth/email.service'[39m)[33m;[39m
+     [90m    |[39m      [31m[1m^[22m[39m
+     [90m 23 |[39m jest[33m.[39mmock([32m'argon2'[39m)[33m;[39m
+     [90m 24 |[39m jest[33m.[39mmock([32m'../../src/auth/jwt.service'[39m)[33m;[39m
+     [90m 25 |[39m[0m
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.mock (tests/integration/api.test.js:22:6)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.642 s, estimated 2 s
+Ran all test suites matching /tests\\integration\\api.test.js/i.

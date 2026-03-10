@@ -1,0 +1,35 @@
+2026-01-16 19:25:58 [[33m'warn'[39m]: ⚠️  JWT_PRIVATE_KEY not configured. Using fallback (DEVELOPMENT ONLY) {"service":"antiphishx-backend"}
+2026-01-16 19:25:58 [[32m'info'[39m]: ✅ JWT Service initialized with HS256 algorithm {"service":"antiphishx-backend"}
+2026-01-16 19:25:58 [[32m'info'[39m]: User registered: test@example.com {"service":"antiphishx-backend"}
+2026-01-16 19:25:58 [[32m'info'[39m]: User logged in: test@example.com {"service":"antiphishx-backend"}
+FAIL tests/auth.test.js
+  Authentication Service
+    register
+      √ should register a new user successfully (4 ms)
+      √ should throw error if email already exists (13 ms)
+    login
+      √ should login user with correct credentials (2 ms)
+      √ should throw error for invalid credentials
+    refreshAccessToken
+      × should refresh access token with valid refresh token (1 ms)
+
+  ● Authentication Service › refreshAccessToken › should refresh access token with valid refresh token
+
+    TypeError: session.revoke is not a function
+
+    [0m [90m 258 |[39m         [36mif[39m (session[33m.[39mdeviceFingerprint [33m!==[39m deviceFingerprint) {
+     [90m 259 |[39m             [90m// Suspicious activity - revoke session[39m
+    [31m[1m>[22m[39m[90m 260 |[39m             [36mawait[39m session[33m.[39mrevoke()[33m;[39m
+     [90m     |[39m                           [31m[1m^[22m[39m
+     [90m 261 |[39m
+     [90m 262 |[39m             [36mawait[39m [33mAuditLog[39m[33m.[39mlog({
+     [90m 263 |[39m                 userId[33m:[39m payload[33m.[39muserId[33m,[39m[0m
+
+      at AuthService.revoke [as refreshAccessToken] (src/auth/auth.service.js:260:27)
+      at Object.<anonymous> (tests/auth.test.js:133:28)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 4 passed, 5 total
+Snapshots:   0 total
+Time:        1.416 s, estimated 2 s
+Ran all test suites matching /tests\\auth.test.js/i.

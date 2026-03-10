@@ -1,0 +1,53 @@
+2026-01-16 19:46:33 [[33m'warn'[39m]: ⚠️  JWT_PRIVATE_KEY not configured. Using fallback (DEVELOPMENT ONLY) {"service":"antiphishx-backend"}
+2026-01-16 19:46:33 [[32m'info'[39m]: ✅ JWT Service initialized with HS256 algorithm {"service":"antiphishx-backend"}
+2026-01-16 19:46:34 [[32m'info'[39m]: POST /api/auth/register {"service":"antiphishx-backend","ip":"::ffff:127.0.0.1"}
+2026-01-16 19:46:34 [[32m'info'[39m]: POST /api/auth/login {"service":"antiphishx-backend","ip":"::ffff:127.0.0.1"}
+2026-01-16 19:46:34 [[31m'error'[39m]: Login error: Session validation failed: userId: Cast to ObjectId failed for value "user123" (type string) at path "userId" because of "BSONError", userAgent: Path `userAgent` is required. {"service":"antiphishx-backend","errors":{"userId":{"stringValue":"\"user123\"","valueType":"string","kind":"ObjectId","value":"user123","path":"userId","reason":{},"name":"CastError","message":"Cast to ObjectId failed for value \"user123\" (type string) at path \"userId\" because of \"BSONError\""},"userAgent":{"name":"ValidatorError","message":"Path `userAgent` is required.","properties":{"message":"Path `userAgent` is required.","type":"required","path":"userAgent"},"kind":"required","path":"userAgent"}},"_message":"Session validation failed","stack":"ValidationError: Session validation failed: userId: Cast to ObjectId failed for value \"user123\" (type string) at path \"userId\" because of \"BSONError\", userAgent: Path `userAgent` is required.\n    at model.Object.<anonymous>.Document.invalidate (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\document.js:3373:32)\n    at model.$set (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\document.js:1490:12)\n    at model.$set (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\document.js:1142:16)\n    at model.Document (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\document.js:178:12)\n    at model.Model (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\model.js:127:12)\n    at new model (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\model.js:4865:15)\n    at C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\model.js:2791:20\n    at Array.map (<anonymous>)\n    at model.create (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\node_modules\\mongoose\\lib\\model.js:2779:34)\n    at AuthService.create [as createSessionAndTokens] (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\src\\auth\\auth.service.js:183:23)\n    at AuthService.createSessionAndTokens [as login] (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\src\\auth\\auth.service.js:154:27)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at login (C:\\Users\\USER\\Desktop\\AntiPhishX\\backend\\src\\auth\\auth.controller.js:83:28)"}
+2026-01-16 19:46:34 [[32m'info'[39m]: GET /api/courses {"service":"antiphishx-backend","ip":"::ffff:127.0.0.1"}
+FAIL tests/integration/api.test.js
+  Integration Tests
+    Authentication Flow
+      × should register a new user (52 ms)
+      × should login with registered user (22 ms)
+    Course Management Flow
+      √ should get courses list (4 ms)
+
+  ● Integration Tests › Authentication Flow › should register a new user
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 400
+
+    [0m [90m 63 |[39m                 })[33m;[39m
+     [90m 64 |[39m
+    [31m[1m>[22m[39m[90m 65 |[39m             expect(response[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;[39m
+     [90m    |[39m                                     [31m[1m^[22m[39m
+     [90m 66 |[39m         })[33m;[39m
+     [90m 67 |[39m
+     [90m 68 |[39m         it([32m'should login with registered user'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.toBe (tests/integration/api.test.js:65:37)
+
+  ● Integration Tests › Authentication Flow › should login with registered user
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 94 |[39m                 })[33m;[39m
+     [90m 95 |[39m
+    [31m[1m>[22m[39m[90m 96 |[39m             expect(response[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m    |[39m                                     [31m[1m^[22m[39m
+     [90m 97 |[39m             expect(response[33m.[39mbody)[33m.[39mtoHaveProperty([32m'accessToken'[39m)[33m;[39m
+     [90m 98 |[39m         })[33m;[39m
+     [90m 99 |[39m     })[33m;[39m[0m
+
+      at Object.toBe (tests/integration/api.test.js:96:37)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 1 passed, 3 total
+Snapshots:   0 total
+Time:        2.051 s
+Ran all test suites matching /tests\\integration\\api.test.js/i.

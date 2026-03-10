@@ -1,0 +1,280 @@
+Malware Detection - Ransomware Encryption Key Management
+Malware Detection - Malware Anti-Analysis Tricks (VM Detection)
+Malware Detection - Analyzing UEFI Bootkits
+Malware Detection - Analyzing Mobile Malware (Android APK)
+Malware Detection - Multi-Stage Loaders
+Malware Detection - Reverse Engineering Assembly (x86)
+Malware Detection - Rootkit Hooking (SSDT)
+Malware Detection - Analyzing Shellcode (Buffer Overflow Exploit)
+Malware Detection - Unpacking Malware (UPX)
+Malware Detection - Botnet Fast Flux DNS
+Malware Detection - Wiper Malware (NotPetya)
+Malware Detection - Alternate Data Streams (ADS)
+Malware Detection - Polymorphic Malware
+Malware Detection - Steganography in Malware (Stegware)
+Malware Detection - Analyzing Conficker (Domain Flux)
+Malware Detection - Memory Forensics (Volatility)
+Malware Detection - Obfuscated JavaScript (De-obfuscation)
+Malware Detection - YARA Rule Creation
+Malware Detection - Shim Database Persistence
+Malware Detection - Living off the Land (LOLBins)
+Malware Detection - Logic Bomb
+Malware Detection - Ransomware Shadow Copies
+Malware Detection - Domain Generation Algorithms (DGA)
+Malware Detection - Fileless Malware (PowerShell)
+Malware Detection - Analyzing Packet Captures (PCAP)
+Malware Detection - Process Injection (DLL Injection)
+Malware Detection - Analyzing a Phishing Payload (HTML Smuggling)
+Malware Detection - Registry Persistence (Run Keys)
+Malware Detection - C2 Traffic Analysis (Beaconing)
+Malware Detection - Recognizing Base64 Encoded Payloads
+Malware Detection - Macro-Enabled Document (VBA)
+Malware Detection - Rootkit Detection (Concept)
+Malware Detection - Botnet Zombie Symptoms
+Malware Detection - Keylogger Identification
+Malware Detection - Drive-by Download
+Malware Detection - Fake Antivirus (Scareware)
+Malware Detection - Suspicious Startup Entry
+Malware Detection - Ransomware Note Identification
+Malware Detection - Hash Verification (Integrity Check)
+Malware Detection - Double Extension Deception
+Advanced Threats - DNA Data Storage Malware
+Advanced Threats - Submarine Cable Tapping
+Advanced Threats - Space Debris Anti-Satellite (ASAT)
+Advanced Threats - Terrorist Financing via NFT
+Advanced Threats - Neural Network Model Inversion
+Advanced Threats - Grid Infrastructure Attack (SCADA)
+Advanced Threats - Medical Device Pacemaker Hack
+Advanced Threats - Automotive CAN Bus Injection
+Advanced Threats - Satellite Hacking (Signal Spoofing)
+Advanced Threats - Power Analysis (Smart Card Hack)
+Advanced Threats - Firmware Implant (HDD/SSD)
+Advanced Threats - Sim Swapping
+Advanced Threats - Deep Fake Video (Real-time biometric bypass)
+Advanced Threats - BGP Hijacking
+Advanced Threats - Radio Frequency Identification (RFID) Cloning - Long Range
+Advanced Threats - Smart Contract Reentrancy Attack
+Advanced Threats - Quantum Decryption (Harvest Now, Decrypt Later)
+Advanced Threats - Adversarial AI (Prompt Injection)
+Advanced Threats - Kubernetes API Server exposure
+Advanced Threats - Spectre/Meltdown (Speculative Execution)
+Advanced Threats - IoT Botnet Recruitment (Mirai)
+Advanced Threats - Kerberoasting
+Advanced Threats - Dependency Confusion
+Advanced Threats - OAuth Token Theft (Consent Phishing)
+Advanced Threats - Docker Container Escape
+Advanced Threats - Subdomain Takeover
+Advanced Threats - Exposed S3 Bucket
+Advanced Threats - Server-Side Request Forgery (SSRF) in Cloud
+Advanced Threats - Golden SAML (Cloud Identity)
+Advanced Threats - Lateral Movement (Pass-the-Hash)
+Advanced Threats - Credential Stuffing
+Advanced Threats - Physical Keyloggers (Hardware)
+Advanced Threats - Typosquatting (Package Managers)
+Advanced Threats - Deepfake Voice (Vishing)
+Advanced Threats - Cryptojacking (Cloud)
+Advanced Threats - Ransomware-as-a-Service (RaaS)
+Advanced Threats - Insider Threat: The Disgruntled Admin
+Advanced Threats - Supply Chain Attack Concept
+Advanced Threats - Advanced Persistent Threat (APT)
+Advanced Threats - Zero-Day Vulnerability Definition
+Social Engineering - Supply Chain Interdiction
+Social Engineering - Strategic Default (Paperclip Attack)
+Social Engineering - Acoustic Cryptanalysis (RSA Key Extraction)
+Social Engineering - Visual Data Exfiltration via LED
+Social Engineering - Social Engineering the Help Desk (MFA Reset)
+Social Engineering - Physical Access Control System (PACS) Cloning
+Social Engineering - Simulated Internal DNS Poisoning
+Social Engineering - Psychological Profiling via Metadata
+Social Engineering - Human Hacking (NLP Manipulation)
+Social Engineering - NLP-Based Spear Phishing Generation
+Social Engineering - Juice Jacking (Public Charger)
+Social Engineering - Wi-Fi Deauthentication (Deauth)
+Social Engineering - Evil Maid Attack
+Social Engineering - Ultrasonic Tracking (Cross-Device)
+Social Engineering - Laser Microphone Surveillance
+Social Engineering - Thermodynamic Side Channels
+Social Engineering - Van Eck Phreaking (Tempest)
+Social Engineering - Cold Boot Attack
+Social Engineering - Keystroke Inference (Audio)
+Social Engineering - Gait Analysis (Surveillance)
+Social Engineering - Deepfake Video Conference
+Social Engineering - Badge Cloning (RFID Skimming)
+Social Engineering - Reverse Social Engineering
+Social Engineering - Clean Desk Policy Violation
+Social Engineering - Eavesdropping via MEMS (Gyroscope)
+Social Engineering - Tech Support Pop-up (Browser Locker)
+Social Engineering - Technical Pretexting (Fake IT)
+Social Engineering - The 'Honey Trap' (Romance Scam)
+Social Engineering - Social Media Mining (OSINT)
+Social Engineering - Vendor Email Compromise (VEC)
+Social Engineering - USB Drop (Baiting)
+Social Engineering - Fake Wi-Fi Portal (Evil Twin)
+Social Engineering - Quid Pro Quo (Survey for Chocolate)
+Social Engineering - Watering Hole Attack Awareness
+Social Engineering - Pretexting: The 'New Hire'
+Social Engineering - Shoulder Surfing
+Social Engineering - Dumpster Diving Defense
+Social Engineering - The 'Urgent' CEO Email (Whaling)
+Social Engineering - Fake LinkedIn Recruiter
+Social Engineering - Tailgating (Piggybacking) Awareness
+QR Attacks - Micro-QR Stego in Printed Documents
+QR Attacks - QR Code fuzzing against EMM
+QR Attacks - Zero-Click QR Exploit
+QR Attacks - QR Quine (Self-Replicating)
+QR Attacks - Audio-Modulated QR (Screen-to-Mic)
+QR Attacks - Holographic QR Spoofing
+QR Attacks - QRLJacking with Session Fixation
+QR Attacks - Phantom QR (Ghost Code)
+QR Attacks - QR-Based Exfiltration (Optical Channel)
+QR Attacks - Deep Learning Decoder Adversarial Attack
+QR Attacks - Physical Layer (Theft via Overlay)
+QR Attacks - Camera Buffer Overflow
+QR Attacks - Malicious Configuration Profile (iOS)
+QR Attacks - QR Phishing with Homograph Attack
+QR Attacks - Dynamic QR Code Redirection
+QR Attacks - SQL Injection via QR
+QR Attacks - XSS in QR Readers
+QR Attacks - QR Flooding (Denial of Service)
+QR Attacks - Malicious Wi-Fi Profile (Man-in-the-Middle)
+QR Attacks - Hidden QR in Steganography
+QR Attacks - Command & Control via QR
+QR Attacks - Boarding Pass QR Theft
+QR Attacks - Attended Robot / Kiosk QR
+QR Attacks - Cryptojacking Script
+QR Attacks - Survey Scam (Typosquatting)
+QR Attacks - Fake Parking Ticket QR
+QR Attacks - Social Media Login QR (QRLJacking)
+QR Attacks - Malicious vCard (Contact) QR
+QR Attacks - Embedded QR in PDF Invoice
+QR Attacks - App Store Redirect (Fleeceware)
+QR Attacks - Bus Stop Ad Survey
+QR Attacks - Fake 2FA Setup
+QR Attacks - Public Wi-Fi Connection QR
+QR Attacks - Crypto Wallet Giveaway
+QR Attacks - Event Ticket Scalper
+QR Attacks - Bill Payment Mailer
+QR Attacks - Unexpected Package Lure
+QR Attacks - Email QR Code (Bypassing Filters)
+QR Attacks - Restaurant Menu Redirect
+QR Attacks - Parking Meter Quishing
+Vishing - Audio Steganography in Voicemail
+Vishing - Reverse Vishing with SEO Poisoning
+Vishing - Social Engineering the Telecom Provider
+Vishing - Synthetic Identity Vishing
+Vishing - Exploiting Voice Assistants (Laser/Light)
+Vishing - Multi-Stage Helpline Fraud
+Vishing - Call Center 'Customer Support' Mole
+Vishing - SS7 Intercept & Redirect
+Vishing - Swatting (Emergency Service Spoofing)
+Vishing - Real-time Deepfake Negotiation
+Vishing - Voice Biometric Bypass (Replay)
+Vishing - Internal Vishing (Insider Threat)
+Vishing - Conference Call Interception
+Vishing - Toll Fraud (IRSF)
+Vishing - Two-Pronged Vishing (The Setup)
+Vishing - Simulated Kidnapping (Virtual Kidnapping)
+Vishing - PBX / Voicemail Hacking
+Vishing - IVR Phishing
+Vishing - War Dialing / War Walking
+Vishing - Deepfake Voice Cloning (CEO Fraud)
+Vishing - Callback Phishing (Hybrid)
+Vishing - Student Loan Forgiveness Scam
+Vishing - Fake Charity after Disaster
+Vishing - Remote Access Scam (AnyDesk)
+Vishing - Bank Impersonation (Number Spoof)
+Vishing - Google Voice Scam
+Vishing - Fake Employee (Help Desk) Tactic
+Vishing - MFA Code Social Engineering
+Vishing - Pig Butchering (Romance/Invsetment) Voice
+Vishing - Caller ID Spoofing Analysis
+Vishing - Lottery Winner Fee
+Vishing - Amazon Order Confirmation
+Vishing - Bank Account Breach Alert
+Vishing - Health Insurance 'verification'
+Vishing - Fake Police / Jury Duty Scam
+Vishing - Utility Shutoff Threate
+Vishing - Can you hear me? (Yes/No)
+Vishing - IRS / Tax Authority Threat
+Vishing - Grandparent Scam
+Vishing - Tech Support Scam
+Smishing - Dark Pattern SMS Unsubscribe
+Smishing - Advanced MFA Bypass with OTP Bot
+Smishing - SMS Pumping Fraud Analysis
+Smishing - RCS (Rich Communication Services) Phishing
+Smishing - Silent SMS (Type 0) Ping
+Smishing - Spear-Smishing (Whaling)
+Smishing - SS7 Network Interception
+Smishing - Zero-Click exploit indicators (Pegasus)
+Smishing - Analyzing a Smishing Forensic Image
+Smishing - Satellite link spoofing (Theoretical)
+Smishing - Political donation scam
+Smishing - SIM Swap precursor detection
+Smishing - Apple Pay / Google Pay provision alert
+Smishing - Targeted 'Pig Butchering' initiation
+Smishing - Fake courier customs fee
+Smishing - Internal employee survey smish
+Smishing - E-Sim fraud attempt
+Smishing - Whatsapp verification code hijacking
+Smishing - Fake crypto wallet connect
+Smishing - Malicious APK delivery (FluBot)
+Smishing - Smishing Kit Recognition
+Smishing - Roaming network request scam
+Smishing - Simulated subscription bomb
+Smishing - Credential Harvesting via Google Form
+Smishing - Fake 2FA request
+Smishing - Calendar Injection via SMS
+Smishing - Area Code Spoofing
+Smishing - Punnycode / Homograph Attack
+Smishing - URL Shortener Analysis
+Smishing - Alphanumeric Sender ID Spoofing
+Smishing - Fake verification URL
+Smishing - Wrong number pretexting
+Smishing - Job offer recruiter scam
+Smishing - Netflix payment declined
+Smishing - Winning a prize scam
+Smishing - Tax refund lure
+Smishing - Gift card CEO scam
+Smishing - Fake bank fraud alert
+Smishing - MFA code interception
+Smishing - Identify urgent delivery scam
+Email Phishing - Phishing campaign clustering
+Email Phishing - Enterprise phishing mitigation planning
+Email Phishing - Post-incident reporting task
+Email Phishing - Legal & compliance response choice
+Email Phishing - SOC escalation workflow decision
+Email Phishing - Business Email Compromise (BEC) triage
+Email Phishing - Executive impersonation analysis
+Email Phishing - Cross-mailbox phishing correlation
+Email Phishing - Domain reputation intelligence usage
+Email Phishing - Vendor invoice fraud detection
+Email Phishing - Email redirect chain analysis
+Email Phishing - Incident response decision making
+Email Phishing - Phishing kit fingerprinting
+Email Phishing - OAuth phishing detection
+Email Phishing - Malicious attachment sandbox reasoning
+Email Phishing - Embedded tracking pixel detection
+Email Phishing - Header chain anomaly detection
+Email Phishing - Email gateway bypass indicators
+Email Phishing - Brand impersonation techniques
+Email Phishing - Multi-stage phishing flow analysis
+Email Phishing - Full email verdict with justification
+Email Phishing - Email thread hijacking detection
+Email Phishing - Credential-harvesting page indicators
+Email Phishing - Image-based phishing detection
+Email Phishing - HTML vs plaintext email comparison
+Email Phishing - Look-alike domain analysis
+Email Phishing - Reply-To mismatch detection
+Email Phishing - DMARC policy evaluation
+Email Phishing - DKIM signature verification
+Email Phishing - SPF result analysis
+Email Phishing - Full email classification (basic)
+Email Phishing - Detect generic greeting
+Email Phishing - Basic email header inspection
+Email Phishing - External email warning interpretation
+Email Phishing - Grammar & formatting red flags
+Email Phishing - Attachment extension risk check
+Email Phishing - Spot urgency language
+Email Phishing - Compare visible link vs actual URL
+Email Phishing - Detect display-name impersonation
+Email Phishing - Identify spoofed sender domain

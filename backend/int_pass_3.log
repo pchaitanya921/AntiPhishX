@@ -1,0 +1,24 @@
+2026-01-16 19:54:10 [[33m'warn'[39m]: ⚠️  JWT_PRIVATE_KEY not configured. Using fallback (DEVELOPMENT ONLY) {"service":"antiphishx-backend"}
+2026-01-16 19:54:10 [[32m'info'[39m]: ✅ JWT Service initialized with HS256 algorithm {"service":"antiphishx-backend"}
+FAIL tests/integration/api.test.js
+  ● Test suite failed to run
+
+    TypeError: nodemailer.createTransporter is not a function
+
+    [0m [90m  9 |[39m [36mclass[39m [33mEmailService[39m {
+     [90m 10 |[39m     constructor() {
+    [31m[1m>[22m[39m[90m 11 |[39m         [36mthis[39m[33m.[39mtransporter [33m=[39m nodemailer[33m.[39mcreateTransporter({
+     [90m    |[39m                                       [31m[1m^[22m[39m
+     [90m 12 |[39m             host[33m:[39m process[33m.[39menv[33m.[39m[33mSMTP_HOST[39m[33m,[39m
+     [90m 13 |[39m             port[33m:[39m process[33m.[39menv[33m.[39m[33mSMTP_PORT[39m[33m,[39m
+     [90m 14 |[39m             secure[33m:[39m process[33m.[39menv[33m.[39m[33mSMTP_SECURE[39m [33m===[39m [32m'true'[39m[33m,[39m[0m
+
+      at new createTransporter (src/email/email.service.js:11:39)
+      at Object.<anonymous> (src/email/email.service.js:159:18)
+      at Object.require (tests/integration/api.test.js:13:22)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        2.111 s
+Ran all test suites matching /tests\\integration\\api.test.js/i.
