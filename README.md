@@ -1,6 +1,6 @@
 # AntiPhishX
 
-![AntiPhishX Hero Banner](https://via.placeholder.com/1000x300.png?text=AntiPhishX+-+AI+Powered+Cybersecurity+Training)
+![AntiPhishX Hero Banner](public/assets/hero_banner.png)
 
 AntiPhishX is a comprehensive, role-based cybersecurity training platform designed to actively teach users how to detect and prevent phishing attacks and other social engineering threats. The system includes interactive simulation labs, curated courses, gamification elements, robust analytics dashboards, and an integrated AI cybersecurity mentor.
 
