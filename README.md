@@ -1,4 +1,6 @@
 # AntiPhishX 🛡️
+<img width="1919" height="927" alt="image" src="https://github.com/user-attachments/assets/1ee83b04-76a5-49c1-a21c-9cf867fd7a0b" />
+<img width="1919" height="971" alt="image" src="https://github.com/user-attachments/assets/cac22cb9-cc69-4002-b35d-e796f40a76f7" />
 
 > **Enterprise-Grade AI-Powered Phishing Awareness & Security Training Platform**
 
