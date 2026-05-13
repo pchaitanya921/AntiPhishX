@@ -8,15 +8,31 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Cyber Enterprise Color Palette
+                // Graphite & Emerald AI Palette
                 cyber: {
-                    black: '#0B0F1A',
-                    dark: '#111827',
-                    purple: '#7C3AED',
-                    cyan: '#22D3EE',
-                    gray: '#9CA3AF',
-                    text: '#E5E7EB',
+                    black: '#0A0A0A',
+                    dark: '#111111',
+                    emerald: '#10B981',
+                    lime: '#A3E635',
+                    gray: '#2A2A2A',
+                    text: '#F3F4F6',
+                    // Keep legacy keys for compatibility but map to new colors
+                    purple: '#10B981', 
+                    cyan: '#A3E635',
                 },
+                graphite: {
+                    50: '#F9FAFB',
+                    100: '#F3F4F6',
+                    200: '#E5E7EB',
+                    300: '#D1D5DB',
+                    400: '#9CA3AF',
+                    500: '#6B7280',
+                    600: '#4B5563',
+                    700: '#374151',
+                    800: '#1F2937',
+                    900: '#111827',
+                    950: '#0A0A0A',
+                }
             },
             fontFamily: {
                 sans: ['Inter', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
@@ -27,8 +43,8 @@ export default {
                 'glow-gradient': 'radial-gradient(circle at center, var(--tw-gradient-stops))',
             },
             boxShadow: {
-                'cyber-glow': '0 0 30px rgba(124, 58, 237, 0.25)',
-                'cyber-glow-cyan': '0 0 30px rgba(34, 211, 238, 0.20)',
+                'cyber-glow': '0 0 30px rgba(16, 185, 129, 0.25)',
+                'cyber-glow-lime': '0 0 30px rgba(163, 230, 53, 0.20)',
                 'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
             },
             animation: {

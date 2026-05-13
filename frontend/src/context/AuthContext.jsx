@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../services/supabase';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -16,20 +15,26 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Refresh user data from server
+    const refreshUser = async () => {
+        try {
+            const response = await authAPI.getMe();
+            if (response.data && response.data.success) {
+                setUser(response.data.data);
+                return response.data.data;
+            }
+        } catch (error) {
+            console.error('Refresh user failed:', error);
+        }
+        return null;
+    };
+
     useEffect(() => {
         // Check for existing session
         const checkAuth = async () => {
             const token = localStorage.getItem('accessToken');
             if (token) {
-                try {
-                    const response = await authAPI.getMe();
-                    if (response.data && response.data.success) {
-                        setUser(response.data.data);
-                    }
-                } catch (error) {
-                    console.error('Auth check failed:', error);
-                    localStorage.removeItem('accessToken');
-                }
+                await refreshUser();
             }
             setLoading(false);
         };
@@ -37,8 +42,8 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    const login = async (email, password) => {
-        const response = await authAPI.login({ email, password });
+    const login = async (email, password, requiredRole) => {
+        const response = await authAPI.login({ email, password, requiredRole });
         if (response.data && response.data.success) {
             setUser(response.data.user);
             localStorage.setItem('accessToken', response.data.token);
@@ -85,6 +90,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateProfile,
+        refreshUser,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
         isInstructor: user?.role === 'instructor' || user?.role === 'admin',
@@ -93,3 +99,4 @@ export const AuthProvider = ({ children }) => {
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+

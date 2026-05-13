@@ -6,20 +6,21 @@ const {
     getMyCourses
 } = require('../controllers/course.controller');
 
-const { protect } = require('../middleware/auth.middleware');
+const { protect, optionalProtect } = require('../middleware/auth.middleware');
+const { deviceEnforcement } = require('../middleware/device.middleware');
 
 const router = express.Router();
 
 // Specific routes must come before parameterized routes
-router.get('/my-courses', protect, getMyCourses);
+router.get('/my-courses', protect, deviceEnforcement, getMyCourses);
 
 router.route('/')
-    .get(getAllCourses);
+    .get(optionalProtect, getAllCourses);
 
 router.route('/:id')
-    .get(getCourse);
+    .get(optionalProtect, getCourse);
 
 router.route('/:id/enroll')
-    .post(protect, enrollCourse);
+    .post(protect, deviceEnforcement, enrollCourse);
 
 module.exports = router;

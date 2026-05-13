@@ -1,36 +1,39 @@
 const mongoose = require('mongoose');
 
 const achievementSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    description: {
-        type: String,
-        required: true
-    },
-    icon: {
-        type: String,
-        default: 'trophy'
-    },
-    points: {
-        type: Number,
-        default: 50
-    },
-    criteria: {
-        type: Object, // Logic for unlocking
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     type: {
         type: String,
-        enum: ['milestone', 'mastery', 'performance', 'streak'],
-        default: 'milestone'
+        required: true,
+        enum: ['badge', 'milestone', 'rank']
     },
-    createdAt: {
+    key: {
+        type: String, // e.g. 'first_neutralization', 'urgency_master'
+        required: true
+    },
+    title: {
+        type: String,
+        required: true
+    },
+    description: String,
+    icon: String,
+    xpReward: {
+        type: Number,
+        default: 100
+    },
+    earnedAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    metadata: Object
+}, {
+    timestamps: true
 });
+
+achievementSchema.index({ user: 1, key: 1 }, { unique: true });
 
 module.exports = mongoose.model('Achievement', achievementSchema);

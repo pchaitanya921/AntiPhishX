@@ -7,6 +7,7 @@ import Terminal from './Terminal';
 import SocialEngineeringEnvironment from './SocialEngineeringEnvironment';
 import VishingEnvironment from './VishingEnvironment';
 import SmishingEnvironment from './SmishingEnvironment';
+import ChatEnvironment from './ChatEnvironment';
 import { LayoutGrid } from 'lucide-react';
 
 const LabWorkspace = ({ lab, onSimulationComplete }) => {
@@ -116,6 +117,17 @@ const LabWorkspace = ({ lab, onSimulationComplete }) => {
                         />
                     </div>
                 );
+            case 'chat':
+            case 'ai_chat':
+                return (
+                    <div className="flex flex-col h-full w-full min-w-0 max-w-5xl mx-auto overflow-auto justify-start pt-8 pb-12">
+                        <ChatEnvironment 
+                            content={content} 
+                            level={lab.level} 
+                            onComplete={onSimulationComplete} 
+                        />
+                    </div>
+                );
             case 'file':
             case 'malware':
                 return (
@@ -170,3 +182,4 @@ const LabWorkspace = ({ lab, onSimulationComplete }) => {
 };
 
 export default LabWorkspace;
+

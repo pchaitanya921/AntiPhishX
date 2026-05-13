@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui';
 import { useTheme } from '../context/ThemeContext';
@@ -18,15 +18,20 @@ import {
     Sparkles,
     Sun,
     Moon,
-    Menu
+    Menu,
+    ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import NotificationCenter from './NotificationCenter';
+import { notificationAPI } from '../services/api';
+import AICopilotPanel from './ai/AICopilotPanel';
 
 const Navbar = () => {
     const { isAuthenticated, logout, user } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const isDark = theme === 'dark';
     const navigate = useNavigate();
+    const location = useLocation();
     const { setOpen: setSidebarOpen } = useContext(SidebarContext);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -34,365 +39,207 @@ const Navbar = () => {
     const [loading, setLoading] = useState(false);
     const profileMenuRef = useRef(null);
     const notificationRef = useRef(null);
+    const [scrolled, setScrolled] = useState(false);
+    const [showAICopilot, setShowAICopilot] = useState(false);
 
-    // Fetch notifications from backend
     useEffect(() => {
-        const fetchNotifications = async () => {
-            if (!isAuthenticated) return;
-            try {
-                setLoading(true);
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/notifications`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    const formatted = (data.data || []).map(n => ({
-                        id: n._id,
-                        title: n.title,
-                        message: n.message,
-                        time: getTimeAgo(new Date(n.createdAt)),
-                        unread: !n.read,
-                        link: n.link,
-                        icon: n.icon
-                    }));
-                    setNotifications(formatted);
-                }
-            } catch (error) {
-                setNotifications([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const handleScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
+    const fetchNotifications = async () => {
+        if (!isAuthenticated) return;
+        try {
+            const response = await notificationAPI.getAll();
+            if (response.data.success) {
+                setNotifications(response.data.data || []);
+            }
+        } catch (error) {
+            console.error('Notification Fetch Error:', error);
+        }
+    };
+
+    // Fetch notifications
+    useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30000);
+        const interval = setInterval(fetchNotifications, 30000); // Check every 30s
         return () => clearInterval(interval);
     }, [isAuthenticated]);
 
-    // Helper function to format time ago
-    const getTimeAgo = (date) => {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 60) return `${seconds}s ago`;
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes}m ago`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours}h ago`;
-        const days = Math.floor(hours / 24);
-        return `${days}d ago`;
-    };
-
-    // Mark notification as read
-    const handleNotificationClick = async (notif) => {
+    const handleMarkAsRead = async (id) => {
         try {
-            const token = localStorage.getItem('token');
-            await fetch(`${import.meta.env.VITE_API_URL}/notifications/${notif.id}/read`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, unread: false } : n));
-            if (notif.link) navigate(notif.link);
+            await notificationAPI.markAsRead(id);
+            setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
         } catch (error) {
-            console.error('Error marking notification as read:', error);
+            console.error('Mark as read error:', error);
         }
     };
 
-    // Mark all notifications as read
-    const handleMarkAllRead = async () => {
+    const handleMarkAllAsRead = async () => {
         try {
-            const token = localStorage.getItem('token');
-            await fetch(`${import.meta.env.VITE_API_URL}/notifications/read-all`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+            await notificationAPI.markAllAsRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         } catch (error) {
-            console.error('Error marking all notifications as read:', error);
+            console.error('Mark all as read error:', error);
         }
     };
 
-    // Close dropdown when clicking outside
+    const handleDeleteNotification = async (id) => {
+        try {
+            await notificationAPI.delete(id);
+            setNotifications(prev => prev.filter(n => n._id !== id));
+        } catch (error) {
+            console.error('Delete notification error:', error);
+        }
+    };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-                setShowProfileMenu(false);
-            }
-            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-                setShowNotifications(false);
-            }
+            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) setShowProfileMenu(false);
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) setShowNotifications(false);
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const handleLogout = async () => {
-        try {
-            await logout();
-            navigate('/login');
-        } catch (error) {
-            console.error('Logout failed:', error);
+        await logout();
+        navigate('/login');
+    };
+
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+    if (isAuthPage) return null;
+
+    const scrollToSection = (e, sectionId) => {
+        if (location.pathname === '/') {
+            e.preventDefault();
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     };
 
     return (
-        <nav className="fixed top-3 sm:top-6 left-0 right-0 z-[60] px-3 sm:px-6 lg:px-8">
-            <div className="max-w-[1700px] mx-auto flex items-center justify-between p-2 pl-3 sm:pl-6 pr-3 sm:pr-4 rounded-2xl sm:rounded-[2rem] border border-white/10 shadow-2xl">
-
-                {/* Logo & hamburger row */}
-                <div className="flex items-center gap-2 sm:gap-3">
-                    {/* Hamburger — mobile/tablet only */}
-                    {isAuthenticated && (
-                        <button
-                            onClick={() => setSidebarOpen(o => !o)}
-                            className="lg:hidden p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all"
-                            aria-label="Open menu"
-                        >
-                            <Menu size={22} />
-                        </button>
-                    )}
-
-                    <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
-                        <motion.div
-                            whileHover={{ rotate: 10, scale: 1.1 }}
-                            className="p-2 rounded-xl bg-cyber-purple/20 border border-cyber-purple/30 shadow-cyber-glow"
-                        >
-                            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-cyber-purple" />
-                        </motion.div>
-                        <span className="text-lg sm:text-xl font-black text-white italic tracking-tighter uppercase">
-                            AntiPhish<span className="cyber-gradient-text">X</span>
+        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 py-4 ${scrolled ? 'bg-black/90 border-b border-white/5' : 'bg-transparent'}`}>
+            <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+                
+                {/* Left: Brand */}
+                <div className="flex items-center gap-8">
+                    <Link to="/" className="flex items-center gap-3 group">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-emerald-500/50 transition-all duration-500">
+                            <Shield className="w-5 h-5 text-white group-hover:text-emerald-400 transition-colors" />
+                        </div>
+                        <span className="text-xl font-black italic tracking-tighter uppercase">
+                            AntiPhish<span className="text-emerald-400">X</span>
                         </span>
                     </Link>
+
+                    {/* Desktop Nav */}
+                    {!isAuthenticated && (
+                        <div className="hidden lg:flex items-center gap-6">
+                            <NavLink to="/#features" onClick={(e) => scrollToSection(e, 'features')}>Features</NavLink>
+                            <NavLink to="/#pricing" onClick={(e) => scrollToSection(e, 'pricing')}>Pricing</NavLink>
+                            <NavLink to="/#enterprise" onClick={(e) => scrollToSection(e, 'enterprise')}>Enterprise</NavLink>
+                        </div>
+                    )}
                 </div>
 
-                {/* Right Side Actions */}
-                <div className="flex items-center gap-2 sm:gap-4">
+                {/* Right: Actions */}
+                <div className="flex items-center gap-4">
                     {isAuthenticated ? (
                         <>
-                            <div className="flex items-center gap-1.5 sm:gap-3 mr-1 sm:mr-2">
-                                {/* AI Copilot Link — hidden on mobile */}
-                                <Link
-                                    to="/ai-copilot"
-                                    className="hidden sm:flex p-2.5 rounded-xl text-white/40 hover:text-cyber-cyan hover:bg-cyber-cyan/10 transition-all group relative"
-                                    title="AI Copilot"
+                            {/* AI Copilot Shortcut */}
+                            <div className="relative group">
+                                <button
+                                    onClick={() => setShowAICopilot(true)}
+                                    className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all relative bg-white/5 border border-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]`}
                                 >
-                                    <Sparkles size={18} className="group-hover:animate-pulse" />
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-cyber-cyan rounded-full shadow-cyber-glow animate-pulse" />
-                                </Link>
-
-                                {/* Dark / Light Mode Toggle */}
-                                <motion.button
-                                    onClick={toggleTheme}
-                                    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                                    className={`relative flex items-center w-14 h-7 rounded-full border transition-colors duration-300 overflow-hidden
-                                        ${isDark
-                                            ? 'bg-[#1a0b2e] border-cyber-purple/40'
-                                            : 'bg-amber-100 border-amber-400/60'
-                                        }`}
-                                    whileTap={{ scale: 0.92 }}
-                                >
-                                    {/* Track icons */}
-                                    <span className="absolute left-1 text-[10px]">🌙</span>
-                                    <span className="absolute right-1 text-[10px]">☀️</span>
-
-                                    {/* Thumb */}
-                                    <motion.div
-                                        layout
-                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                        className={`absolute w-5 h-5 rounded-full flex items-center justify-center shadow-lg z-10
-                                            ${isDark
-                                                ? 'left-1 bg-cyber-purple text-white'
-                                                : 'left-[calc(100%-1.5rem)] bg-amber-400 text-amber-900'
-                                            }`}
-                                    >
-                                        {isDark
-                                            ? <Moon size={11} className="text-white" />
-                                            : <Sun size={11} className="text-amber-900" />
-                                        }
-                                    </motion.div>
-                                </motion.button>
-
-                                {/* Notification Bell */}
-                                <div className="relative" ref={notificationRef}>
-                                    <button
-                                        onClick={() => setShowNotifications(!showNotifications)}
-                                        className="p-2.5 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all relative"
-                                    >
-                                        <Bell size={18} />
-                                        <span className="absolute top-3 right-3 w-1.5 h-1.5 bg-cyber-purple rounded-full shadow-cyber-glow" />
-                                    </button>
-
-                                    {/* Notification Panel */}
-                                    <AnimatePresence>
-                                        {showNotifications && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="absolute right-0 mt-4 w-96 backdrop-blur-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50"
-                                            >
-                                                <div className="p-4 border-b border-white/10">
-                                                    <h3 className="text-white font-black text-sm uppercase tracking-wider">Notifications</h3>
-                                                </div>
-                                                <div className="max-h-96 overflow-y-auto">
-                                                    {loading ? (
-                                                        <div className="p-8 text-center">
-                                                            <p className="text-white/40 text-sm">Loading...</p>
-                                                        </div>
-                                                    ) : notifications.length === 0 ? (
-                                                        <div className="p-8 text-center">
-                                                            <Bell className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                                                            <p className="text-white/40 text-sm">No notifications</p>
-                                                        </div>
-                                                    ) : (
-                                                        notifications.map((notif) => (
-                                                            <div
-                                                                key={notif.id}
-                                                                onClick={() => handleNotificationClick(notif)}
-                                                                className={`p-4 border-b border-white/5 hover:bg-white/5 transition-all cursor-pointer ${notif.unread ? 'bg-cyber-purple/5' : ''
-                                                                    }`}
-                                                            >
-                                                                <div className="flex items-start gap-3">
-                                                                    {notif.unread && (
-                                                                        <div className="w-2 h-2 rounded-full bg-cyber-purple mt-2 flex-shrink-0" />
-                                                                    )}
-                                                                    <div className="flex-1">
-                                                                        <p className="text-white font-semibold text-sm">{notif.title}</p>
-                                                                        <p className="text-white/60 text-xs mt-1">{notif.message}</p>
-                                                                        <p className="text-white/40 text-xs mt-2">{notif.time}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
-                                                <div className="p-3 border-t border-white/10 flex items-center justify-between">
-                                                    <span className="text-white/30 text-xs">
-                                                        {notifications.filter(n => n.unread).length} unread
-                                                    </span>
-                                                    <button
-                                                        onClick={handleMarkAllRead}
-                                                        className="text-cyber-purple text-xs font-bold hover:text-cyber-purple/80 transition-colors"
-                                                    >
-                                                        Mark All Read
-                                                    </button>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                    <div className="absolute inset-0 bg-emerald-500/10 rounded-xl opacity-0 group-hover:opacity-100 animate-pulse transition-opacity" />
+                                    <Cpu size={18} className="text-white/40 group-hover:text-emerald-400 transition-colors relative z-10" />
+                                    
+                                    {/* Subtle Animated Aura */}
+                                    <span className="absolute inset-0 rounded-xl border border-emerald-500/20 animate-ping opacity-0 group-hover:opacity-100" />
+                                </button>
+                                
+                                {/* Tooltip */}
+                                <div className="absolute top-full right-0 mt-3 px-3 py-1.5 rounded-lg bg-black/90 border border-white/10 text-[9px] font-black uppercase tracking-widest text-emerald-400 opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap z-[120] translate-y-2 group-hover:translate-y-0 shadow-2xl">
+                                    AI Copilot
                                 </div>
                             </div>
 
-                            <div className="hidden sm:block h-8 w-px bg-white/5 mx-1" />
+                            {/* Notification Bell */}
+                            <div className="relative" ref={notificationRef}>
+                                <button
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                    className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all relative ${
+                                        showNotifications ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                    } border`}
+                                >
+                                    <Bell size={18} className={`${notifications.some(n => !n.isRead) ? 'text-emerald-400' : 'text-white/40'}`} />
+                                    {notifications.some(n => !n.isRead) && (
+                                        <span className="absolute top-3 right-3 w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                                    )}
+                                </button>
+                                
+                                <AnimatePresence>
+                                    {showNotifications && (
+                                        <NotificationCenter 
+                                            notifications={notifications}
+                                            onMarkAsRead={handleMarkAsRead}
+                                            onMarkAllAsRead={handleMarkAllAsRead}
+                                            onDelete={handleDeleteNotification}
+                                            onClose={() => setShowNotifications(false)}
+                                        />
+                                    )}
+                                </AnimatePresence>
+                            </div>
 
-                            {/* Points Display — learners only, hidden on mobile */}
-                            {(!user?.role || user?.role === 'learner') && (
-                                <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyber-purple/20 to-cyber-cyan/20 border border-cyber-purple/30">
-                                    <Sparkles size={16} className="text-cyber-purple" />
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-white/50 uppercase tracking-widest font-semibold">Points</span>
-                                        <span className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-cyber-purple to-cyber-cyan">
-                                            {user?.points || 0}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="h-8 w-px bg-white/5 mx-1" />
+                            {/* User Profile */}
                             <div className="relative" ref={profileMenuRef}>
                                 <button
                                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                                    className="flex items-center gap-4 pl-2 hover:bg-white/5 rounded-xl pr-2 py-1 transition-all"
+                                    className="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all"
                                 >
-                                    <div className="hidden sm:flex flex-col items-end">
-                                        <span className="text-[11px] font-black text-white tracking-tight uppercase">
-                                            {user?.firstName} {user?.lastName || 'Johnson'}
-                                        </span>
-                                        <span className="text-[9px] text-cyber-purple uppercase tracking-[0.2em] font-black">Agent Node-01</span>
-                                    </div>
-
-                                    <motion.div
-                                        whileHover={{ scale: 1.05 }}
-                                        className="w-11 h-11 rounded-xl bg-cyber-purple/10 border border-cyber-purple/20 flex items-center justify-center relative group overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-cyber-purple/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <span className="text-xs font-black uppercase tracking-widest text-white/40 hidden sm:block">
+                                        {user?.firstName}
+                                    </span>
+                                    <div className="w-8 h-8 rounded-lg bg-cyber-purple/20 border border-cyber-purple/20 flex items-center justify-center overflow-hidden">
                                         <img
-                                            src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=7C3AED&color=fff&bold=true&size=128`}
-                                            alt={`${user?.firstName} ${user?.lastName}`}
-                                            className="w-full h-full object-cover rounded-xl relative z-10"
+                                            src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=7C3AED&color=fff&bold=true`}
+                                            alt="Avatar"
+                                            className="w-full h-full object-cover"
                                         />
-                                    </motion.div>
-
-                                    <ChevronDown
-                                        size={16}
-                                        className={`text-white/40 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}
-                                    />
+                                    </div>
+                                    <ChevronDown size={14} className={`text-white/20 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
                                 </button>
 
-                                {/* Dropdown Menu */}
                                 <AnimatePresence>
                                     {showProfileMenu && (
                                         <motion.div
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="absolute right-0 mt-2 w-64 backdrop-blur-3xl bg-gradient-to-br from-white/20 to-white/10 rounded-2xl border-2 border-white/30 shadow-2xl overflow-hidden z-50"
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            className="absolute right-0 mt-3 w-64 rounded-[2rem] bg-[#0c0c0e] border border-white/10 shadow-2xl overflow-hidden p-2 z-[110]"
                                         >
-                                            {/* User Info Header */}
-                                            <div className="p-4 border-b border-white/20 bg-white/5">
-                                                <div className="flex items-center gap-3">
-                                                    <img
-                                                        src={`https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=7C3AED&color=fff&bold=true`}
-                                                        className="w-12 h-12 rounded-xl"
-                                                        alt="Profile"
-                                                    />
-                                                    <div>
-                                                        <p className="text-white font-bold text-sm">
-                                                            {user?.firstName} {user?.lastName}
-                                                        </p>
-                                                        <p className="text-white/60 text-xs">{user?.email}</p>
-                                                    </div>
-                                                </div>
+                                            <div className="p-6 border-b border-white/5">
+                                                <p className="text-sm font-black italic tracking-tighter uppercase">{user?.firstName} {user?.lastName}</p>
+                                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">{user?.role} NODE</p>
                                             </div>
-
-                                            {/* Menu Items */}
-                                            <div className="p-2 bg-black/20">
-                                                <button
+                                            <div className="p-2 space-y-1">
+                                                <MenuButton 
                                                     onClick={() => {
-                                                        setShowProfileMenu(false);
-                                                        navigate('/profile');
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all text-sm font-medium"
-                                                >
-                                                    <User size={18} className="text-cyber-purple" />
-                                                    View Profile
-                                                </button>
-
-                                                <button
-                                                    onClick={() => {
-                                                        setShowProfileMenu(false);
-                                                        navigate('/settings');
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all text-sm font-medium"
-                                                >
-                                                    <Settings size={18} className="text-cyan-400" />
-                                                    Settings
-                                                </button>
-
-                                                <div className="h-px bg-white/10 my-2" />
-
-                                                <button
-                                                    onClick={() => {
-                                                        setShowProfileMenu(false);
-                                                        handleLogout();
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all text-sm font-medium"
-                                                >
-                                                    <LogOut size={18} />
-                                                    Logout
-                                                </button>
+                                                        const isAdminPrivileged = ['admin', 'superAdmin', 'enterpriseAdmin', 'internalTester'].includes(user?.role);
+                                                        navigate(isAdminPrivileged ? '/admin/dashboard' : user?.role === 'instructor' ? '/instructor/dashboard' : '/dashboard');
+                                                    }} 
+                                                    icon={Cpu} 
+                                                    label="Command Center" 
+                                                />
+                                                <MenuButton onClick={() => navigate('/profile')} icon={User} label="Identity Profile" />
+                                                <MenuButton onClick={() => navigate('/settings')} icon={Settings} label="Node Settings" />
+                                                <div className="h-px bg-white/5 my-2 mx-4" />
+                                                <MenuButton onClick={handleLogout} icon={LogOut} label="Terminate Session" variant="danger" />
                                             </div>
                                         </motion.div>
                                     )}
@@ -400,19 +247,50 @@ const Navbar = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="flex items-center gap-4">
-                            <Link to="/login">
-                                <Button variant="ghost" size="md" className="uppercase tracking-[0.2em] text-[10px]">Access Portal</Button>
+                        <div className="flex items-center gap-3">
+                            <Link to="/login" className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">
+                                Access Node
                             </Link>
-                            <Link to="/register">
-                                <Button variant="primary" size="md" className="uppercase tracking-[0.1em] text-[10px] h-11 px-8">Initialize Node</Button>
+                            <Link to="/register" className="px-6 py-2.5 rounded-full bg-cyber-purple/10 border border-cyber-purple/30 text-cyber-purple hover:bg-cyber-purple hover:text-white text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-[0_0_20px_rgba(124,58,237,0.2)]">
+                                Initialize <ArrowRight className="inline-block ml-1" size={14} />
                             </Link>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* AI Copilot Panel */}
+            <AICopilotPanel 
+                isOpen={showAICopilot} 
+                onClose={() => setShowAICopilot(false)} 
+            />
         </nav>
     );
 };
 
+function NavLink({ to, children, onClick }) {
+    return (
+        <Link 
+            to={to} 
+            onClick={onClick}
+            className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-emerald-400 transition-all duration-300"
+        >
+            {children}
+        </Link>
+    );
+}
+
+function MenuButton({ onClick, icon: Icon, label, variant = 'default' }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest ${variant === 'danger' ? 'text-red-400 hover:bg-red-500/10' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+        >
+            <Icon size={16} />
+            {label}
+        </button>
+    );
+}
+
 export default Navbar;
+

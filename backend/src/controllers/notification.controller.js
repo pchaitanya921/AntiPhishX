@@ -7,10 +7,10 @@ const Notification = require('../models/Notification');
 exports.getNotifications = async (req, res) => {
     try {
         const notifications = await Notification.find({ user: req.user._id })
-            .sort({ read: 1, createdAt: -1 })   // unread first, then newest
+            .sort({ isRead: 1, createdAt: -1 })   
             .limit(20);
 
-        const unreadCount = notifications.filter(n => !n.read).length;
+        const unreadCount = await Notification.countDocuments({ user: req.user._id, isRead: false });
 
         res.status(200).json({
             success: true,
@@ -32,7 +32,7 @@ exports.markAsRead = async (req, res) => {
     try {
         const notification = await Notification.findOneAndUpdate(
             { _id: req.params.id, user: req.user._id },
-            { read: true },
+            { isRead: true },
             { new: true }
         );
 
@@ -54,8 +54,8 @@ exports.markAsRead = async (req, res) => {
 exports.markAllAsRead = async (req, res) => {
     try {
         await Notification.updateMany(
-            { user: req.user._id, read: false },
-            { read: true }
+            { user: req.user._id, isRead: false },
+            { isRead: true }
         );
 
         res.status(200).json({ success: true, message: 'All notifications marked as read' });

@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
     if (success) {
         return (
             <div className="auth-page min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950 flex items-center justify-center p-6">
-                <div className="max-w-md w-full bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center">
+                <div className="max-w-md w-full bg-slate-900/50  border border-white/10 rounded-3xl p-8 text-center">
                     <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                         <CheckCircle className="w-8 h-8 text-green-500" />
                     </div>
@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
     return (
         <div className="auth-page min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950 flex items-center justify-center p-6">
             <div className="max-w-md w-full">
-                <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+                <div className="bg-slate-900/50  border border-white/10 rounded-3xl p-8">
                     <div className="text-center mb-8">
                         <h1 className="text-4xl font-black text-white mb-3">
                             Reset Password 🔐
@@ -203,3 +203,4 @@ function RequirementItem({ met, text }) {
         </div>
     );
 }
+

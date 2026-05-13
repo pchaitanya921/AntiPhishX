@@ -126,3 +126,4 @@ const TranscriptPanel = ({ segments = [], content = '', currentTime = 0, onSegme
 };
 
 export default TranscriptPanel;
+

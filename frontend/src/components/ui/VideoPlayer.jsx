@@ -121,3 +121,4 @@ const VideoPlayer = forwardRef(({ url, videoUrl, thumbnailUrl, cloudinaryId, onP
 VideoPlayer.displayName = 'VideoPlayer';
 
 export default VideoPlayer;
+

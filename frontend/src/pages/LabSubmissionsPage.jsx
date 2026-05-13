@@ -74,7 +74,7 @@ export default function LabSubmissionsPage() {
             </div>
 
             {/* Submissions Table */}
-            <div className="border border-white/5 rounded-2xl overflow-hidden bg-[#0d1117]/80 backdrop-blur-sm">
+            <div className="border border-white/5 rounded-2xl overflow-hidden bg-[#0d1117]/80 ">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -145,3 +145,4 @@ export default function LabSubmissionsPage() {
         </div>
     );
 }
+

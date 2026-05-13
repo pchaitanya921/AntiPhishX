@@ -1,0 +1,53 @@
+# ========================
+# Security — NEVER COMMIT
+# ========================
+**/.env
+**/.env.local
+**/.env.production
+**/.env.staging
+**/.env.development
+*.pem
+*.key
+*.cert
+
+# ========================
+# Dependencies
+# ========================
+node_modules/
+**/node_modules/
+
+# ========================
+# Build Output
+# ========================
+dist/
+build/
+.output/
+frontend/dist/
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+npm-debug.log*
+
+# ========================
+# OS & Editor Files
+# ========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ========================
+# Vite / Dev Cache
+# ========================
+**/.vite/
+frontend/.vite/
+
+# ========================
+# Misc
+# ========================
+scratch/
+*.tmp
+coverage/

@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const SecurityLog = require('../models/SecurityLog');
+const auditService = require('../services/audit.service');
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -17,14 +18,17 @@ exports.register = async (req, res, next) => {
             role // Optional: For admin/instructor creation during dev
         });
 
-        // Log Registration Success
-        await SecurityLog.create({
-            user: user._id,
-            action: 'REGISTER_SUCCESS',
-            severity: 'info',
-            ipAddress: req.ip || req.connection.remoteAddress,
-            details: { email, role }
-        });
+        // 🔥 SIEM Event: Registration Success
+        if (user.organization) {
+            await auditService.log({
+                organizationId: user.organization,
+                userId: user._id,
+                eventType: 'USER_REGISTERED',
+                severity: 'LOW',
+                details: { email, role: user.role },
+                req
+            });
+        }
 
         const token = user.getSignedJwtToken();
         res.status(200).json({
@@ -60,7 +64,7 @@ exports.register = async (req, res, next) => {
 // @access  Public
 exports.login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, requiredRole } = req.body;
 
         // Validate email & password
         if (!email || !password) {
@@ -89,6 +93,16 @@ exports.login = async (req, res, next) => {
             });
         }
 
+        // Check for required role (Strict Separation)
+        const isAdmin = ['admin', 'superAdmin'].includes(user.role);
+        if (requiredRole && user.role !== requiredRole && !isAdmin) {
+            // Admins and SuperAdmins can log into any portal, but others are restricted
+            return res.status(403).json({
+                success: false,
+                message: `Identity not authorized for this access node. Role '${user.role}' cannot access ${requiredRole} portal.`
+            });
+        }
+
         // Check if password matches
         const isMatch = await user.matchPassword(password);
         console.log('Password match result for', email, ':', isMatch);
@@ -109,26 +123,32 @@ exports.login = async (req, res, next) => {
             });
         }
 
-        // Log Login Success
-        await SecurityLog.create({
-            user: user._id,
-            action: 'LOGIN_SUCCESS',
-            severity: 'info',
-            ipAddress: req.ip || req.connection.remoteAddress,
-            userAgent: req.headers['user-agent'],
-            details: { email }
-        });
+        // 🔥 SIEM Event: User Login
+        if (user.organization) {
+            await auditService.log({
+                organizationId: user.organization,
+                userId: user._id,
+                eventType: 'USER_LOGIN',
+                severity: 'LOW',
+                details: { email: user.email },
+                req
+            });
+        }
 
         sendTokenResponse(user, 200, res);
     } catch (err) {
-        console.error(err);
-        // Log Server Error during Login
-        await SecurityLog.create({
-            action: 'LOGIN_FAILURE',
-            severity: 'error',
-            ipAddress: req.ip || req.connection.remoteAddress,
-            details: { email: req.body.email, error: err.message }
-        });
+        console.error('CRITICAL LOGIN ERROR:', err);
+        // Log Failure with safety
+        try {
+            await auditService.log({
+                eventType: 'USER_LOGIN_FAILURE',
+                severity: 'WARNING',
+                details: { email: req.body?.email || 'unknown', error: err?.message || 'Unknown error' },
+                req
+            });
+        } catch (logErr) {
+            console.error('Audit logging failed during login catch:', logErr);
+        }
 
         res.status(500).json({
             success: false,
@@ -158,6 +178,29 @@ exports.getMe = async (req, res, next) => {
 
 };
 
+// @desc    Get user behavior profile
+// @route   GET /api/auth/behavior
+// @access  Private
+exports.getBehavior = async (req, res, next) => {
+    try {
+        const UserBehavior = require('../models/UserBehavior');
+        let behavior = await UserBehavior.findOne({ user: req.user.id });
+        if (!behavior) {
+            behavior = await UserBehavior.create({ user: req.user.id });
+        }
+        res.status(200).json({
+            success: true,
+            data: behavior
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
 // @desc    Log user out / clear cookie
 // @route   GET /api/auth/logout
 // @access  Private
@@ -167,13 +210,14 @@ exports.logout = async (req, res, next) => {
         httpOnly: true
     });
 
-    // Log Logout
-    if (req.user) {
-        await SecurityLog.create({
-            user: req.user.id,
-            action: 'LOGOUT',
-            severity: 'info',
-            ipAddress: req.ip || req.connection.remoteAddress
+    // 🔥 SIEM Event: Logout
+    if (req.user && req.user.organization) {
+        await auditService.log({
+            organizationId: req.user.organization,
+            userId: req.user.id,
+            eventType: 'USER_LOGOUT',
+            severity: 'LOW',
+            req
         });
     }
 
@@ -254,4 +298,37 @@ const sendTokenResponse = (user, statusCode, res) => {
                 role: user.role
             }
         });
+};
+
+// @desc    Get active devices
+// @route   GET /api/auth/devices
+// @access  Private
+exports.getDevices = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id).select('activeDevices');
+        res.status(200).json({
+            success: true,
+            data: user.activeDevices
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Remove an active device
+// @route   DELETE /api/auth/devices/:deviceId
+// @access  Private
+exports.removeDevice = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id);
+        user.activeDevices = user.activeDevices.filter(d => d.deviceId !== req.params.deviceId);
+        await user.save();
+        
+        res.status(200).json({
+            success: true,
+            message: 'Device revoked successfully'
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
 };

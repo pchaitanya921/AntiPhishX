@@ -1,130 +1,210 @@
 import React, { useState, useEffect } from 'react';
-import { Scroll, Award, Download, Share2, ExternalLink, Calendar, BookOpen, Clock, ShieldCheck } from 'lucide-react';
-import { Card, Button } from '../components/ui';
-import { motion } from 'framer-motion';
-import api from '../services/api';
+import { 
+    Scroll, 
+    Award, 
+    Download, 
+    Share2, 
+    ExternalLink, 
+    Calendar, 
+    ShieldCheck, 
+    Lock,
+    Cpu,
+    Fingerprint,
+    Zap,
+    ChevronRight,
+    Search
+} from 'lucide-react';
+import { Card, Button, Badge } from '../components/ui';
+import { motion, AnimatePresence } from 'framer-motion';
+import { certificatesAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { format } from 'date-fns';
 
-const SAMPLE_CERTIFICATES = [
-    { id: 'cert1', courseName: 'Email Phishing Detection Fundamentals', issueDate: '15 Jan 2026', score: 94, duration: '6 hrs 40 min', credentialId: 'APX-2026-EPD-001847' },
-    { id: 'cert2', courseName: 'Social Engineering & Vishing Tactics', issueDate: '2 Feb 2026', score: 88, duration: '4 hrs 15 min', credentialId: 'APX-2026-SEV-002193' },
-    { id: 'cert3', courseName: 'QR Code & Smishing Attack Scenarios', issueDate: '28 Feb 2026', score: 91, duration: '3 hrs 50 min', credentialId: 'APX-2026-QRS-003021' },
+const TRACKS = [
+    { id: 'executive_intelligence', title: 'Executive Intelligence', icon: Zap },
+    { id: 'tactical_defense', title: 'Tactical Defense', icon: ShieldCheck },
+    { id: 'cognitive_security', title: 'Cognitive Security', icon: Fingerprint },
+    { id: 'advanced_ai_adaptive', title: 'Advanced AI Adaptive', icon: Cpu },
 ];
 
-export default function CertificatesPage() {
-    const [loading] = useState(false);
-    const [certificates] = useState(SAMPLE_CERTIFICATES);
+const LEVELS = ['beginner', 'intermediate', 'advanced'];
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-20">
-                <div className="w-12 h-12 border-4 border-cyber-cyan border-t-transparent rounded-full animate-spin" />
-            </div>
-        );
-    }
+export default function CertificatesPage() {
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [certificates, setCertificates] = useState([]);
+    const [checkingTrack, setCheckingTrack] = useState(null);
+
+    useEffect(() => {
+        fetchCertificates();
+    }, []);
+
+    const fetchCertificates = async () => {
+        try {
+            setLoading(true);
+            const res = await certificatesAPI.getMyCertificates();
+            if (res.data.success) {
+                setCertificates(res.data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch certificates:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCheckEligibility = async (domain, level) => {
+        const trackId = `${domain}_${level}`;
+        try {
+            setCheckingTrack(trackId);
+            const res = await certificatesAPI.check({ domain, level });
+            if (res.data.success && res.data.issued) {
+                // Refresh list if a new certificate was issued
+                fetchCertificates();
+            } else {
+                // Show progress stats (implement a modal or toast)
+                console.log('Eligibility Stats:', res.data.data);
+                alert(`Not yet eligible. Required Labs: ${res.data.data.requiredLabs}, Resilience: ${res.data.data.requiredResilience}%`);
+            }
+        } catch (err) {
+            console.error('Eligibility Check Failed:', err);
+        } finally {
+            setCheckingTrack(null);
+        }
+    };
+
+    const handleDownload = async (cert) => {
+        try {
+            const res = await certificatesAPI.download(cert._id);
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `AntiPhishX_${cert.certificateId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+        } catch (err) {
+            console.error('Download failed:', err);
+        }
+    };
 
     return (
         <div className="max-w-7xl mx-auto py-12 px-6">
-            {/* Header section */}
+            {/* Header */}
             <div className="mb-16">
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 rounded-2xl bg-cyber-purple/10 border border-cyber-purple/30">
-                        <Scroll className="text-cyber-purple w-8 h-8" />
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                        <Scroll className="text-emerald-400 w-8 h-8" />
                     </div>
-                    <h1 className="text-5xl font-black italic text-white tracking-tight uppercase">
-                        Digital <span className="text-cyber-purple">Certificates</span>
-                    </h1>
+                    <div>
+                        <h1 className="text-5xl font-black italic text-white tracking-tight uppercase">
+                            Enterprise <span className="text-emerald-400">Certifications</span>
+                        </h1>
+                        <p className="text-emerald-400/80 text-xs font-black uppercase tracking-widest mt-1">
+                            Immutable Professional Credentials
+                        </p>
+                    </div>
                 </div>
-                <p className="text-white/40 text-lg font-medium max-w-2xl">
-                    Your official certifications for completed training modules and cybersecurity specializations.
-                </p>
             </div>
 
-            {certificates.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {certificates.map((cert, index) => (
-                        <motion.div
-                            key={cert.id}
-                            initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                        >
-                            <Card className="flex flex-col md:flex-row overflow-hidden bg-white/[0.02] border-white/10 group hover:border-cyber-purple/40 transition-all duration-500">
-                                {/* Left Side: Visual Representation */}
-                                <div className="w-full md:w-52 h-64 md:h-auto bg-black/40 relative overflow-hidden flex items-center justify-center p-4 border-r border-white/5">
-                                    <div className="relative z-10 w-full aspect-[4/3] bg-gradient-to-br from-cyber-black to-slate-900 border-2 border-white/10 rounded-lg p-3 shadow-2xl flex flex-col items-center justify-center text-center">
-                                        <Award className="text-cyber-purple w-10 h-10 mb-2 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
-                                        <div className="text-[6px] font-black uppercase text-cyber-purple tracking-[0.2em] mb-1">AntiPhishX Certified</div>
-                                        <div className="text-[8px] font-bold text-white leading-tight px-1 line-clamp-2 uppercase italic">{cert.courseName}</div>
-                                        <div className="mt-2 text-[5px] text-white/40">Credential: {cert.credentialId}</div>
-                                    </div>
-                                    {/* Scanline effect over cert preview */}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent h-24 w-full -translate-y-full hover:translate-y-full transition-transform duration-[2s] pointer-events-none" />
-                                </div>
+            {/* Certification Tracks Grid */}
+            <div className="space-y-20">
+                {TRACKS.map((track) => (
+                    <div key={track.id} className="space-y-10">
+                        <div className="flex items-center gap-5 border-l-4 border-emerald-500 pl-8">
+                            <track.icon className="text-emerald-500 w-8 h-8" />
+                            <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{track.title}</h2>
+                        </div>
 
-                                {/* Right Side: Details */}
-                                <div className="flex-1 p-8 flex flex-col">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyber-purple mb-1">Training Program</div>
-                                            <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none mb-2">
-                                                {cert.courseName}
-                                            </h3>
-                                        </div>
-                                        <div className="p-3 bg-cyber-purple/10 rounded-xl border border-cyber-purple/20">
-                                            <ShieldCheck className="text-cyber-purple w-5 h-5" />
-                                        </div>
-                                    </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {LEVELS.map((level) => {
+                                const cert = certificates.find(c => c.domain === track.id && c.level === level);
+                                const isChecking = checkingTrack === `${track.id}_${level}`;
 
-                                    <div className="grid grid-cols-2 gap-6 mb-8">
-                                        <div>
-                                            <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">
-                                                <Calendar size={12} className="text-cyber-purple" /> Issued Date
+                                return (
+                                    <motion.div
+                                        key={level}
+                                        whileHover={{ y: -5 }}
+                                    >
+                                        <Card className={`p-8 rounded-[2.5rem] bg-white/[0.02] border-white/5  relative overflow-hidden flex flex-col h-full ${cert ? 'border-emerald-500/20 bg-emerald-500/[0.02]' : ''}`}>
+                                            {cert && (
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5  -mr-16 -mt-16" />
+                                            )}
+                                            
+                                            <div className="flex justify-between items-start mb-8">
+                                                <Badge variant={cert ? "emerald" : "outline"} className="px-4 py-1.5 uppercase italic text-[9px] tracking-widest">
+                                                    {level} tier
+                                                </Badge>
+                                                {cert && <CheckCircle2 className="text-emerald-400" size={24} />}
                                             </div>
-                                            <div className="text-white font-bold">{cert.issueDate}</div>
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">
-                                                <Award size={12} className="text-cyber-purple" /> Final Score
-                                            </div>
-                                            <div className="text-cyber-cyan font-black">{cert.score}% Pass</div>
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">
-                                                <Clock size={12} className="text-cyber-purple" /> Duration
-                                            </div>
-                                            <div className="text-white font-bold">{cert.duration}</div>
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">
-                                                <BookOpen size={12} className="text-cyber-purple" /> ID
-                                            </div>
-                                            <div className="text-white font-medium">{cert.credentialId}</div>
-                                        </div>
-                                    </div>
 
-                                    <div className="mt-auto flex gap-3">
-                                        <Button variant="primary" className="flex-1 gap-2 uppercase tracking-widest text-[10px]">
-                                            <Download size={14} /> Download PDF
-                                        </Button>
-                                        <button className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-white/60 hover:text-white">
-                                            <Share2 size={16} />
-                                        </button>
-                                        <button className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-white/60 hover:text-white">
-                                            <ExternalLink size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-                    ))}
+                                            <h3 className="text-xl font-black italic text-white uppercase tracking-tighter mb-2">{track.title}</h3>
+                                            <p className="text-[10px] text-white/20 uppercase tracking-[0.2em] font-black mb-10">APX {level} Certification</p>
+
+                                            {cert ? (
+                                                <div className="space-y-6 mt-auto">
+                                                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5">
+                                                        <p className="text-[8px] text-white/20 uppercase tracking-widest mb-1">Issued Date</p>
+                                                        <p className="text-xs font-black text-white">{format(new Date(cert.issueDate), 'dd MMM yyyy')}</p>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button 
+                                                            onClick={() => handleDownload(cert)}
+                                                            className="flex-1 h-12 bg-emerald-500 text-black hover:bg-emerald-400 font-black uppercase tracking-widest text-[9px] italic rounded-xl gap-2"
+                                                        >
+                                                            <Download size={14} /> Download
+                                                        </Button>
+                                                        <button 
+                                                            onClick={() => window.open(`/verify/${cert.certificateId}`, '_blank')}
+                                                            className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                                                        >
+                                                            <ExternalLink size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-auto">
+                                                    <div className="flex items-center gap-3 text-white/10 mb-8">
+                                                        <Lock size={16} />
+                                                        <span className="text-[9px] font-black uppercase tracking-widest">Requires {level === 'beginner' ? '25' : level === 'intermediate' ? '50' : '75'} Nodes</span>
+                                                    </div>
+                                                    <Button 
+                                                        disabled={isChecking}
+                                                        onClick={() => handleCheckEligibility(track.id, level)}
+                                                        className="w-full h-12 border border-white/10 bg-transparent text-white/40 hover:text-white hover:border-emerald-500/40 font-black uppercase tracking-widest text-[9px] italic rounded-xl flex items-center justify-center gap-2"
+                                                    >
+                                                        {isChecking ? (
+                                                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                                        ) : (
+                                                            <>Sync Progress <ChevronRight size={14} /></>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </Card>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Empty State / Bottom CTA */}
+            <div className="mt-32 p-16 rounded-[4rem] bg-emerald-500/5 border border-emerald-500/10 text-center relative overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10  rounded-full" />
+                <div className="relative z-10">
+                    <Award className="w-16 h-16 text-emerald-500 mx-auto mb-8 animate-pulse" />
+                    <h3 className="text-3xl font-black italic text-white uppercase tracking-tighter mb-4">Advance Your Career</h3>
+                    <p className="text-white/40 max-w-xl mx-auto text-sm font-medium mb-10">
+                        AntiPhishX certifications are industry-recognized proof of your behavioral resilience and tactical cybersecurity expertise. Share your credentials on LinkedIn to showcase your verified skill set.
+                    </p>
+                    <div className="flex items-center justify-center gap-6">
+                        <Button className="h-14 px-10 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-2xl italic">Explore Labs</Button>
+                        <Button variant="outline" className="h-14 px-10 border-white/10 text-white/60 rounded-2xl font-black uppercase tracking-widest italic">Verification Portal</Button>
+                    </div>
                 </div>
-            ) : (
-                <div className="py-40 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-                    <Award className="w-20 h-20 text-white/5 mx-auto mb-8" />
-                    <h2 className="text-3xl font-black italic text-white/20 uppercase tracking-widest mb-4">No Certifications Earned Yet</h2>
-                    <p className="text-white/10 max-w-md mx-auto font-medium">Complete your first specialized course to receive an immutable digital certification of your expertise.</p>
-                </div>
-            )}
+            </div>
         </div>
     );
 }
+

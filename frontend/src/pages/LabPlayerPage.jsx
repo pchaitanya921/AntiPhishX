@@ -1,19 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, ChevronLeft, ChevronRight, Sparkles, X } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
+import { Trophy, Star, ArrowRight, Home, ArrowLeft, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 import AchievementNotification from '../components/AchievementNotification';
 import LabManual from '../components/lab/LabManual';
 import LabWorkspace from '../components/lab/LabWorkspace';
 import ChatInterface from '../components/ai/ChatInterface';
-import { useMemo } from 'react';
+import MissionBriefing from '../components/lab/MissionBriefing';
 
 export default function LabPlayerPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { connected } = useSocket();
 
+    // All hooks must be declared before any conditional returns
     const [lab, setLab] = useState(null);
     const [loading, setLoading] = useState(true);
     const [timeLeft, setTimeLeft] = useState(0);
@@ -22,10 +26,15 @@ export default function LabPlayerPage() {
     const [startTime] = useState(Date.now());
     const [newAchievements, setNewAchievements] = useState([]);
     const [currentAchievementIndex, setCurrentAchievementIndex] = useState(0);
-    const [collapsed, setCollapsed] = useState(true);
+    const [showFinalResult, setShowFinalResult] = useState(false);
+    const [stars, setStars] = useState(0);
+    const [collapsed, setCollapsed] = useState(false); // Start expanded for better visibility
     const [showAi, setShowAi] = useState(false);
+    const [showBriefing, setShowBriefing] = useState(true);
 
-    // Hooks must be at the top level, not inside JSX
+    const isAdminPrivileged = ['admin', 'superAdmin', 'enterpriseAdmin', 'internalTester'].includes(user?.role);
+    const isAdminOrInstructor = isAdminPrivileged || user?.role === 'instructor';
+
     const memoizedLabContext = useMemo(() => {
         if (!lab) return null;
         return {
@@ -62,25 +71,55 @@ export default function LabPlayerPage() {
         }
     };
 
-    const handleLabSubmit = async (answer, hintsUsed = 0) => {
+    const handleLabSubmit = async (answer, hintsUsed = 0, telemetry = {}) => {
         if (!answer) return;
+        console.log('[LAB_PLAYER] Processing determination for node:', id, 'Answer:', answer);
         const timeSpent = Math.floor((Date.now() - startTime) / 1000);
         try {
             const response = await api.post(`/labs/${id}/submit`, {
                 answer,
                 timeSpent,
-                hintsUsed
+                hintsUsed,
+                telemetry
             });
-            setResult(response.data);
-            setSubmitted(true);
-            if (response.data.newAchievements?.length > 0) {
-                setNewAchievements(response.data.newAchievements);
-                setCurrentAchievementIndex(0);
+            
+            if (response.data) {
+                console.log('[LAB_PLAYER] Determination accepted by Intelligence Node');
+                setResult(response.data);
+                setSubmitted(true);
+                setCollapsed(false); // Ensure manual stays open to show results
+                
+                if (response.data.newAchievements?.length > 0) {
+                    setNewAchievements(response.data.newAchievements);
+                    setCurrentAchievementIndex(0);
+                }
+            } else {
+                throw new Error('Invalid response from Intelligence Node');
             }
         } catch (error) {
-            console.error('Error submitting lab:', error);
+            console.error('[LAB_PLAYER] Transmission failure:', error);
             throw error;
         }
+    };
+
+    const handleRetry = () => {
+        setSubmitted(false);
+        setResult(null);
+        setShowFinalResult(false);
+    };
+
+    const handleFinalSubmit = () => {
+        // Calculate stars based on performance
+        let rating = 3;
+        const timeLimit = lab?.timeLimit || 600;
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        
+        if (result?.hintsUsed > 0) rating--;
+        if (timeSpent > timeLimit / 2) rating--;
+        if (rating < 1) rating = 1;
+        
+        setStars(rating);
+        setShowFinalResult(true);
     };
 
     const formatTime = (seconds) => {
@@ -118,22 +157,32 @@ export default function LabPlayerPage() {
 
     return (
         <div className="relative flex-1 flex bg-[#0d1117] min-h-0">
+            <AnimatePresence>
+                {showBriefing && (
+                    <MissionBriefing 
+                        lab={lab} 
+                        onStart={() => setShowBriefing(false)} 
+                    />
+                )}
+            </AnimatePresence>
             {/* Left Sidebar: Lab Manual */}
             <div
-                className={`${collapsed ? 'w-[60px]' : 'w-[320px]'} shrink-0 h-full border-r border-white/10 z-20 shadow-2xl transition-all duration-300 relative bg-[#0d1117] flex flex-col`}
+                className={`${(collapsed && !submitted) ? 'w-[60px]' : 'w-[360px]'} shrink-0 h-full border-r border-white/10 z-20 shadow-2xl transition-all duration-500 relative bg-[#0d1117] flex flex-col`}
                 onMouseEnter={() => setCollapsed(false)}
-                onMouseLeave={() => setCollapsed(true)}
+                onMouseLeave={() => !submitted && setCollapsed(true)}
             >
-                <div className={`h-full w-full overflow-hidden ${collapsed ? 'opacity-0 invisible' : 'opacity-100 visible'} transition-all duration-200 delay-75 flex flex-col`}>
-                    <LabManual
-                        lab={lab}
-                        timeLeft={timeLeft}
-                        formatTime={formatTime}
-                        onSubmit={handleLabSubmit}
-                        submitted={submitted}
-                        result={result}
-                        previewMode={user?.role === 'admin' || user?.role === 'instructor'}
-                    />
+                <div className={`h-full w-full overflow-hidden ${(collapsed && !submitted) ? 'opacity-0 invisible' : 'opacity-100 visible'} transition-all duration-300 flex flex-col`}>
+                        <LabManual
+                            lab={lab}
+                            timeLeft={timeLeft}
+                            formatTime={formatTime}
+                            onSubmit={handleLabSubmit}
+                            onRetry={handleRetry}
+                            onSubmitLab={handleFinalSubmit}
+                            submitted={submitted}
+                            result={result}
+                            previewMode={isAdminOrInstructor}
+                        />
                 </div>
 
                 {collapsed && (
@@ -175,8 +224,8 @@ export default function LabPlayerPage() {
 
                         <div className="h-4 w-px bg-white/10"></div>
                         <div className="flex items-center gap-2 text-white/30">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                            <span className="font-mono">LIVE_LINK: OK</span>
+                            <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                            <span className="font-mono">{connected ? 'LIVE_LINK: OK' : 'LIVE_LINK: OFFLINE'}</span>
                         </div>
                     </div>
                 </div>
@@ -217,8 +266,105 @@ export default function LabPlayerPage() {
                     }}
                 />
             )}
+            {/* Final Result Modal */}
+            <AnimatePresence>
+                {showFinalResult && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0d1117]/95 "
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            className="w-full max-w-lg bg-[#161b22] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+                        >
+                            {/* Header: Visual Celebration */}
+                            <div className="relative h-48 bg-gradient-to-br from-cyber-cyan/20 to-transparent flex items-center justify-center">
+                                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                                <motion.div
+                                    initial={{ rotate: -15, scale: 0 }}
+                                    animate={{ rotate: 0, scale: 1 }}
+                                    transition={{ type: 'spring', damping: 12 }}
+                                    className="relative z-10"
+                                >
+                                    <div className="w-24 h-24 bg-cyber-cyan rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(0,255,194,0.4)]">
+                                        <Trophy className="w-12 h-12 text-black" />
+                                    </div>
+                                    <motion.div
+                                        animate={{ scale: [1, 1.2, 1] }}
+                                        transition={{ repeat: Infinity, duration: 2 }}
+                                        className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"
+                                    >
+                                        <div className="w-5 h-5 text-cyber-cyan flex items-center justify-center font-bold">⚡</div>
+                                    </motion.div>
+                                </motion.div>
+                            </div>
+
+                            <div className="p-10 text-center">
+                                <motion.h2
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-3xl font-black text-white mb-2 uppercase tracking-tight"
+                                >
+                                    Mission Accomplished
+                                </motion.h2>
+                                <p className="text-white/40 font-mono text-sm mb-8 uppercase tracking-widest">
+                                    Intelligence Node: {lab.title}
+                                </p>
+
+                                {/* Stars Calculation */}
+                                <div className="flex justify-center gap-3 mb-10">
+                                    {[1, 2, 3].map((s) => (
+                                        <motion.div
+                                            key={s}
+                                            initial={{ scale: 0, rotate: -30 }}
+                                            animate={{ scale: 1, rotate: 0 }}
+                                            transition={{ delay: 0.3 + (s * 0.1) }}
+                                        >
+                                            <Star
+                                                className={`w-10 h-10 ${s <= stars ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]' : 'text-white/10'}`}
+                                            />
+                                        </motion.div>
+                                    ))}
+                                </div>
+
+                                {/* Metrics Grid */}
+                                <div className="grid grid-cols-2 gap-4 mb-10">
+                                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5">
+                                        <div className="text-white/30 text-[10px] uppercase font-bold tracking-widest mb-1">Score</div>
+                                        <div className="text-2xl font-black text-white">+{result?.score || lab.points}</div>
+                                    </div>
+                                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5">
+                                        <div className="text-white/30 text-[10px] uppercase font-bold tracking-widest mb-1">XP Gained</div>
+                                        <div className="text-2xl font-black text-cyber-cyan">+{result?.experiencePoints || 150}</div>
+                                    </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={() => navigate('/labs')}
+                                        className="w-full h-[64px] bg-cyber-cyan text-black rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(0,255,194,0.2)] hover:shadow-[0_0_50px_rgba(0,255,194,0.4)] transition-all flex items-center justify-center gap-3 active:scale-95"
+                                    >
+                                        Next Intelligence Node
+                                        <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/dashboard')}
+                                        className="w-full h-[64px] bg-white/5 text-white rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] hover:bg-white/10 transition-all flex items-center justify-center gap-3 active:scale-95"
+                                    >
+                                        Return to Command Base
+                                        <Home className="w-5 h-5 opacity-40" />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
-
 

@@ -90,7 +90,7 @@ const SmishingEnvironment = ({ content, level, onComplete }) => {
                                             ? 'bg-blue-500 text-white rounded-br-sm'
                                             : 'bg-[#e9e9eb] text-black rounded-bl-sm'
                                         }
-                                        ${isExpert ? 'blur-sm hover:blur-none transition-all cursor-crosshair' : ''}
+                                        ${isExpert ? ' hover: transition-all cursor-crosshair' : ''}
                                     `}>
                                         <p className="whitespace-pre-wrap leading-relaxed break-words">{msg.message}</p>
 
@@ -133,7 +133,7 @@ const SmishingEnvironment = ({ content, level, onComplete }) => {
             </div>
 
             {/* ─── Analysis Panel (desktop) ─── */}
-            <div className="hidden lg:flex flex-col w-[360px] h-[580px] bg-slate-900/60 backdrop-blur-md rounded-2xl border border-white/5 overflow-hidden shadow-2xl self-center">
+            <div className="hidden lg:flex flex-col w-[360px] h-[580px] bg-slate-900/60  rounded-2xl border border-white/5 overflow-hidden shadow-2xl self-center">
 
                 {/* Panel Header */}
                 <div className="px-5 py-3 border-b border-white/5 bg-slate-900/60">
@@ -259,3 +259,4 @@ function extractFirstUrl(text) {
 }
 
 export default SmishingEnvironment;
+

@@ -17,27 +17,29 @@ import { Card, Button, Badge } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { instructorAPI } from '../services/api';
 
-const SAMPLE_INSTRUCTOR_DATA = {
-    stats: {
-        totalCourses: 7,
-        totalEnrollments: 1209,
-        avgPassRate: 87,
-        engagementRate: 74,
-        pendingLabs: 12,
-    },
-    myCourses: [
-        { _id: 'c1', title: 'Email Phishing Detection Fundamentals', level: 'Beginner', chapters: Array(8), enrollmentsCount: 342, published: true },
-        { _id: 'c2', title: 'Social Engineering & Vishing Tactics', level: 'Intermediate', chapters: Array(6), enrollmentsCount: 218, published: true },
-        { _id: 'c3', title: 'Advanced Malware & Ransomware Analysis', level: 'Advanced', chapters: Array(10), enrollmentsCount: 127, published: true },
-        { _id: 'c4', title: 'QR Code & Smishing Attack Scenarios', level: 'Intermediate', chapters: Array(5), enrollmentsCount: 189, published: true },
-        { _id: 'c5', title: 'Business Email Compromise (BEC)', level: 'Advanced', chapters: Array(7), enrollmentsCount: 94, published: false },
-    ]
-};
 
 export default function InstructorDashboard() {
     const { user } = useAuth();
-    const [data] = useState(SAMPLE_INSTRUCTOR_DATA);
-    const [loading] = useState(false);
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDashboard = async () => {
+            try {
+                setLoading(true);
+                const res = await instructorAPI.getDashboard();
+                if (res.data.success) {
+                    setData(res.data.data);
+                }
+            } catch (err) {
+                console.error('Failed to synchronize instructor telemetry:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboard();
+    }, []);
 
 
 
@@ -84,7 +86,7 @@ export default function InstructorDashboard() {
                     </div>
 
                     <div className="space-y-4">
-                        {(data?.myCourses || []).slice(0, 3).map((course) => (
+                        {(data?.courses || []).slice(0, 3).map((course) => (
                             <div key={course._id} className="flex items-center justify-between p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all group">
                                 <div className="flex items-center gap-5">
                                     <div className="p-3 rounded-xl bg-cyber-purple/10 text-cyber-purple">
@@ -115,7 +117,7 @@ export default function InstructorDashboard() {
                             </div>
                         ))}
 
-                        {(data?.myCourses || []).length > 0 && (
+                        {(data?.courses || []).length > 0 && (
                             <Button
                                 variant="outline"
                                 className="w-full h-12 text-[10px] font-black uppercase tracking-[0.2em]"
@@ -135,8 +137,8 @@ export default function InstructorDashboard() {
                     </h3>
                     <div className="space-y-8">
                         <div className="text-center p-6 rounded-3xl bg-green-400/5 border border-green-400/10">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-green-400/60 mb-2">Average Pass Rate</div>
-                            <div className="text-5xl font-black italic text-green-400">{data?.stats?.avgPassRate || 0}%</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-green-400/60 mb-2">Average Satisfaction</div>
+                            <div className="text-5xl font-black italic text-green-400">{data?.stats?.averageRating || 0}</div>
                         </div>
 
                         <div className="space-y-4">
@@ -159,3 +161,4 @@ export default function InstructorDashboard() {
         </div>
     );
 }
+

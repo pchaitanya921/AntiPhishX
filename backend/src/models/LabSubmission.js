@@ -32,6 +32,14 @@ const labSubmissionSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    aiExplanation: {
+        type: String,
+        trim: true
+    },
+    telemetry: {
+        type: Object,
+        default: {}
+    },
     submittedAt: {
         type: Date,
         default: Date.now

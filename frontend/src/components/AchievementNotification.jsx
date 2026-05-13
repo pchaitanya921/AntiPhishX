@@ -35,7 +35,7 @@ export default function AchievementNotification({ achievement, onClose }) {
                     : 'translate-x-full opacity-0'
                 }`}
         >
-            <div className="bg-gradient-to-br from-purple-900/95 to-cyber-black/95 backdrop-blur-lg border-2 border-cyber-cyan rounded-xl p-6 shadow-2xl min-w-[320px] relative overflow-hidden">
+            <div className="bg-gradient-to-br from-purple-900/95 to-cyber-black/95  border-2 border-cyber-cyan rounded-xl p-6 shadow-2xl min-w-[320px] relative overflow-hidden">
                 {/* Animated Background */}
                 <div className="absolute inset-0 bg-gradient-to-r from-cyber-cyan/10 to-purple-500/10 animate-pulse" />
 
@@ -112,3 +112,4 @@ export default function AchievementNotification({ achievement, onClose }) {
         </div>
     );
 }
+

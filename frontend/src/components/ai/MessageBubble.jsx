@@ -110,3 +110,4 @@ const MessageBubble = ({ message, isUser }) => {
 };
 
 export default MessageBubble;
+

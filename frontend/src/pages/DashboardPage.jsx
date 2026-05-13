@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Shield,
     CheckCircle2,
@@ -11,73 +11,123 @@ import {
     Zap,
     ChevronRight,
     Award,
-    Filter
+    Filter,
+    BarChart3,
+    Terminal,
+    BrainCircuit,
+    Fingerprint,
+    Cpu
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import ThreatInsightPanel from '../components/dashboard/ThreatInsightPanel';
+import HumanRiskIntelligence from '../components/dashboard/HumanRiskIntelligence';
+import NeuralRoadmap from '../components/dashboard/NeuralRoadmap';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { analyticsAPI } from '../services/api';
+import PermissionWrapper from '../components/auth/PermissionWrapper';
+import { authAPI, analyticsAPI, aiAPI, labAPI } from '../services/api';
 
-// Realistic sample analytics for learner dashboard demo
-const SAMPLE_ANALYTICS = {
-    overallProgress: 73,
-    quizPassRate: 84,
-    quizAttempts: 12,
-    labAttempts: 9,
-    labPassRate: 78,
-    quizHistory: [55, 60, 70, 65, 80, 75, 84, 90, 78, 82, 88, 84],
-    recentActivity: [
-        { _id: 'a1', action: 'LAB_COMPLETED', resource: 'Spear Phishing Simulation', severity: 'info', timestamp: new Date(Date.now() - 60000).toISOString() },
-        { _id: 'a2', action: 'QUIZ_PASSED', resource: 'Phishing Detection Assessment', severity: 'info', timestamp: new Date(Date.now() - 3600000).toISOString() },
-        { _id: 'a3', action: 'ACHIEVEMENT_UNLOCKED', resource: 'Cyber Guardian Badge', severity: 'info', timestamp: new Date(Date.now() - 7200000).toISOString() },
-        { _id: 'a4', action: 'COURSE_ENROLLED', resource: 'Advanced Malware Analysis', severity: 'info', timestamp: new Date(Date.now() - 86400000).toISOString() },
-        { _id: 'a5', action: 'CERTIFICATE_EARNED', resource: 'Email Phishing Fundamentals', severity: 'info', timestamp: new Date(Date.now() - 172800000).toISOString() },
-    ]
-};
 
 export default function DashboardPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [analytics] = React.useState(SAMPLE_ANALYTICS);
-    const [loading] = React.useState(false);
+    const [analytics, setAnalytics] = React.useState(null);
+    const [hri, setHri] = React.useState(null);
+    const [loading, setLoading] = React.useState(true);
     const [filter, setFilter] = React.useState('all');
     const [showThreatPanel, setShowThreatPanel] = React.useState(false);
     const [selectedLog, setSelectedLog] = React.useState(null);
+    const [behavior, setBehavior] = React.useState(null);
+    const [roadmap, setRoadmap] = React.useState(null);
+    const [generatingAI, setGeneratingAI] = React.useState(false);
+    const [launchingSmart, setLaunchingSmart] = React.useState(false);
 
     React.useEffect(() => {
-        // Redirect based on role
-        if (user?.role === 'admin') { navigate('/admin'); return; }
-        if (user?.role === 'instructor') { navigate('/instructor'); return; }
+        const isAdminPrivileged = ['admin', 'superAdmin', 'enterpriseAdmin', 'internalTester'].includes(user?.role);
+        if (isAdminPrivileged) { navigate('/admin/dashboard'); return; }
+        if (user?.role === 'instructor') { navigate('/instructor/dashboard'); return; }
+        
+        const fetchDashboardData = async () => {
+            try {
+                setLoading(true);
+                const [analyticsRes, behaviorRes, hriRes, roadmapRes] = await Promise.all([
+                    analyticsAPI.getUserAnalytics(),
+                    authAPI.getBehavior(),
+                    analyticsAPI.getHRI(),
+                    labAPI.getNeuralRoadmap()
+                ]);
+                
+                if (analyticsRes.data.success) {
+                    setAnalytics(analyticsRes.data.data);
+                }
+                
+                if (behaviorRes.data.success) {
+                    setBehavior(behaviorRes.data.data);
+                }
+
+                if (hriRes.data.success) {
+                    setHri(hriRes.data.data);
+                }
+
+                if (roadmapRes.data.success) {
+                    setRoadmap(roadmapRes.data.data);
+                }
+            } catch (err) {
+                console.error('Failed to synchronize dashboard telemetry:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchDashboardData();
+        }
     }, [user, navigate]);
 
+    const handleSmartStart = async () => {
+        try {
+            setLaunchingSmart(true);
+            const res = await labAPI.getAdaptiveNext();
+            if (res.data.success) {
+                const lab = res.data.data;
+                navigate(`/labs/${lab._id}`);
+            }
+        } catch (err) {
+            console.error('Smart Start Orchestration Failed:', err);
+        } finally {
+            setLaunchingSmart(false);
+        }
+    };
 
-    // ===== REAL THREAT SCORE CALCULATION =====
+    const handleLaunchAIChallenge = async () => {
+        try {
+            setGeneratingAI(true);
+            const res = await aiAPI.generateAdaptiveChallenge({ domain: 'Executive Intelligence' });
+            if (res.data.success) {
+                // Navigate to lab player with the AI lab data in state
+                navigate('/labs/ai-session', { state: { lab: res.data.data, isAI: true } });
+            }
+        } catch (err) {
+            console.error('AI Lab Synthesis Failed:', err);
+        } finally {
+            setGeneratingAI(false);
+        }
+    };
+
     const calculateThreatScore = () => {
-        if (!analytics) return { level: 'LOW', label: 'Strong Security Awareness', color: 'green' };
-
-        let score = 100; // Start at perfect (100 = LOW threat)
-
-        // Factor 1: Quiz Performance (40% weight)
+        if (!analytics) return { level: 'LOW', label: 'Strong Security Awareness', color: 'emerald' };
+        let score = 100;
         const quizPassRate = analytics.quizPassRate || 0;
         if (quizPassRate < 50) score -= 40;
         else if (quizPassRate < 70) score -= 20;
-
-        // Factor 2: Lab Performance (30% weight)
         const labPassRate = analytics.labPassRate || 0;
         if (labPassRate < 50) score -= 30;
         else if (labPassRate < 70) score -= 15;
-
-        // Factor 3: Activity Level (20% weight)
         const hasActivity = (analytics.quizAttempts || 0) > 0 || (analytics.labAttempts || 0) > 0;
-        if (!hasActivity) score -= 20; // No engagement = risk
-
-        // Factor 4: Overall Progress (10% weight)
+        if (!hasActivity) score -= 20;
         const progress = analytics.overallProgress || 0;
         if (progress < 30) score -= 10;
-
-        // Determine threat level
-        if (score >= 70) return { level: 'LOW', label: 'Strong Security Awareness', color: 'green' };
+        if (score >= 70) return { level: 'LOW', label: 'Strong Security Awareness', color: 'emerald' };
         if (score >= 40) return { level: 'MEDIUM', label: 'Needs Improvement', color: 'yellow' };
         return { level: 'HIGH', label: 'At Risk', color: 'red' };
     };
@@ -87,145 +137,166 @@ export default function DashboardPage() {
     if (loading) {
         return (
             <div className="min-h-[60vh] flex flex-col items-center justify-center">
-                <div className="w-16 h-16 border-4 border-cyber-purple/30 border-t-cyber-purple rounded-full animate-spin mb-4" />
-                <p className="text-white/40 font-black uppercase tracking-[0.3em] text-[10px]">Synchronizing Security Node...</p>
+                <div className="w-16 h-16 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin mb-6" />
+                <p className="text-white/20 font-black uppercase tracking-[0.4em] text-[10px]">Synchronizing Security Node...</p>
             </div>
         );
     }
 
     const activityLogs = analytics?.recentActivity?.map(log => ({
         id: log._id,
-        action: log.action.replace(/_/g, ' '),
-        target: log.resource,
-        xp: log.severity === 'critical' ? 'Alert' : '+50 pt',
-        type: log.severity === 'info' ? 'success' : 'info'
+        action: String(log.action || log.topic || 'System Activity').replace(/_/g, ' '),
+        target: log.resource || `${log.level || 'Unknown'} Level`,
+        xp: log.severity === 'critical' ? 'Alert' : (log.score ? `+${log.score} PT` : '+50 PT'),
+        type: log.severity === 'info' || log.completed ? 'success' : 'info'
     })) || [];
 
     const filteredLogs = activityLogs.filter(log => {
         if (filter === 'all') return true;
-        if (filter === 'low') return log.type === 'success'; // showing safe/info logs
+        if (filter === 'low') return log.type === 'success';
         return true;
     });
 
     return (
-        <div className="space-y-10">
-            {/* Top Stats / Status Bar */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-white/5">
-                <div>
-                    <h1 className="text-5xl font-black mb-3 tracking-tighter italic text-white">
-                        Welcome, <span className="text-white">{user?.firstName} {user?.lastName || 'Johnson'}</span>
+        <div className="space-y-12 pb-20">
+            {/* Header / Welcome Area */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pt-8 px-2">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="bg-emerald-500/5 border-emerald-500/20 text-emerald-500 text-[9px] font-black tracking-[0.2em] uppercase px-4 py-1">
+                            Node Online // {new Date().toLocaleDateString()}
+                        </Badge>
+                        {user?.currentPlan === 'enterprise_lattice' && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-cyan-900/20 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+                            >
+                                <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400">
+                                    ENTERPRISE LATTICE — {user?.billingCycle?.toUpperCase() || 'MONTHLY'} PLAN
+                                </span>
+                            </motion.div>
+                        )}
+                        {(user?.currentPlan === 'core_node' || user?.currentPlan === 'neural_advanced') && user?.billingCycle !== 'none' && (
+                            <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/5 border border-white/10">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-white/20">
+                                    {user?.currentPlan?.replace('_', ' ')} — {user?.billingCycle?.toUpperCase()}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                    <h1 className="text-5xl lg:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">
+                        Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600">{user?.firstName}</span>
                     </h1>
-                    <p className="text-white/40 font-bold uppercase tracking-widest text-xs mb-6">
-                        Securely access your AntiPhishX account
+                    <p className="text-white/20 font-bold uppercase tracking-[0.3em] text-[10px]">
+                        Secure Session Active · node_{user?._id?.slice(-6) || 'auth'}
                     </p>
 
-                    <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-[0.2em]">
-                        <div className="flex items-center gap-2 text-green-400">
+                    <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-[0.2em] pt-4">
+                        {['superAdmin', 'enterpriseAdmin', 'internalTester'].includes(user?.role) ? (
+                            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/30 animate-pulse">
+                                <Zap size={14} className="fill-emerald-400" /> Enterprise Access Active
+                            </div>
+                        ) : (
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${
+                                user?.currentPlan === 'enterprise_lattice' ? 'text-purple-400 bg-purple-500/10 border-purple-500/30' :
+                                user?.currentPlan === 'neural_advanced' ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' :
+                                'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                            }`}>
+                                <Shield size={14} /> Operational Tier: {(user?.currentPlan || 'core_node').replace('_', ' ').toUpperCase()}
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 text-emerald-400/60 bg-emerald-500/5 px-4 py-2 rounded-full border border-emerald-500/10">
                             <CheckCircle2 size={14} /> Encrypted Session
                         </div>
-                        <div className="flex items-center gap-2 text-green-400">
+                        <div className="flex items-center gap-2 text-emerald-400/60 bg-emerald-500/5 px-4 py-2 rounded-full border border-emerald-500/10">
                             <CheckCircle2 size={14} /> MFA Protected
-                        </div>
-                        <div className="flex items-center gap-2 text-cyber-purple">
-                            <Zap size={14} /> Rate Limiting Active
                         </div>
                     </div>
                 </div>
 
                 {/* Threat Score Indicator */}
-                <div onClick={() => setShowThreatPanel(true)} className="flex items-center gap-4 bg-white/[0.03] border border-white/10 p-4 rounded-2xl shadow-cyber-glow hover:bg-white/5 transition-all group cursor-pointer">
-                    <Shield size={20} className={`text-${threatScore.color}-400`} />
+                <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => setShowThreatPanel(true)} 
+                    className="flex items-center gap-6 bg-[#111111] border border-white/5 p-6 rounded-[2.5rem] shadow-2xl hover:border-emerald-500/30 transition-all group cursor-pointer relative overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className={`p-4 rounded-2xl bg-${threatScore.color}-500/10 text-${threatScore.color}-400`}>
+                        <Shield size={24} />
+                    </div>
                     <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">Threat Score</span>
-                        <div className="flex items-center gap-2">
-                            <span className={`text-lg font-black text-${threatScore.color}-400`}>{threatScore.level}</span>
-                            <ChevronRight size={14} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 block mb-1">Threat Profile</span>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-2xl font-black text-${threatScore.color}-400 italic`}>{threatScore.level}</span>
+                            <ChevronRight size={18} className="text-white/10 group-hover:translate-x-1 transition-transform" />
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Dashboard Sub-Header */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black italic flex items-center gap-3 text-white">
-                    Dashboard
-                </h2>
-                <div className="flex items-center gap-3 bg-white/[0.03] p-1 rounded-xl border border-white/5">
-                    <button
-                        onClick={() => setFilter('all')}
-                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors rounded-lg ${filter === 'all'
-                            ? 'bg-cyber-purple/20 text-white border border-cyber-purple/30'
-                            : 'text-white/40 hover:text-white'
-                            }`}
-                    >
-                        All
-                    </button>
-                    <button
-                        onClick={() => setFilter('low')}
-                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors rounded-lg ${filter === 'low'
-                            ? 'bg-cyber-purple/20 text-white border border-cyber-purple/30'
-                            : 'text-white/40 hover:text-white'
-                            }`}
-                    >
-                        Low
-                    </button>
-                </div>
+                </motion.div>
             </div>
 
             {/* Main Content Grid */}
             <div className="grid lg:grid-cols-12 gap-8">
+                
+                {/* Stats Summary Row */}
+                <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <StatCard icon={TrendingUp} label="Total Progress" value={`${Math.round(analytics?.overallProgress || 0)}%`} color="emerald" />
+                    <StatCard icon={CheckCircle2} label="Quiz Pass Rate" value={`${Math.round(analytics?.quizPassRate || 0)}%`} color="lime" />
+                    <StatCard icon={Zap} label="Labs Completed" value={analytics?.labAttempts || 0} color="emerald" />
+                    <StatCard icon={Award} label="Achievements" value={analytics?.achievementsCount || "14"} color="lime" />
+                </div>
 
                 {/* Phishing Training Widget */}
-                <Card className="lg:col-span-5 p-8 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                        <Zap size={100} className="text-cyber-purple" />
+                <Card className="lg:col-span-5 p-10 relative overflow-hidden group rounded-[3rem] bg-[#111111]/40 border-white/5">
+                    <div className="absolute -top-10 -right-10 p-10 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
+                        <BarChart3 size={200} className="text-emerald-500" />
                     </div>
                     <div className="relative z-10 flex flex-col items-center">
-                        <div className="w-full flex justify-center items-center mb-8">
-                            <h3 className="text-xl font-black italic">Phishing <span className="text-cyber-cyan">Training</span></h3>
+                        <div className="w-full flex justify-between items-center mb-10">
+                            <h3 className="text-xl font-black italic uppercase tracking-tight">Intelligence <span className="text-emerald-400">Node</span></h3>
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                         </div>
 
-                        {/* SVG Gauge */}
-                        <div className="relative w-56 h-32 flex flex-col items-center justify-end">
-                            {/* Background Track */}
+                        {/* Gauge */}
+                        <div className="relative w-64 h-36 flex flex-col items-center justify-end">
                             <svg className="absolute top-0 left-0 w-full h-full overflow-visible" viewBox="0 0 100 50">
                                 <path
                                     d="M 10 50 A 40 40 0 0 1 90 50"
                                     fill="none"
-                                    stroke="rgba(255,255,255,0.1)"
-                                    strokeWidth="8"
+                                    stroke="rgba(255,255,255,0.03)"
+                                    strokeWidth="10"
                                     strokeLinecap="round"
                                 />
-                                {/* Progress Arc */}
                                 <motion.path
                                     d="M 10 50 A 40 40 0 0 1 90 50"
                                     fill="none"
-                                    stroke="url(#gradient)"
-                                    strokeWidth="8"
+                                    stroke="url(#emerald-gradient)"
+                                    strokeWidth="10"
                                     strokeLinecap="round"
                                     initial={{ pathLength: 0 }}
                                     animate={{ pathLength: (analytics?.overallProgress || 0) / 100 }}
-                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    transition={{ duration: 1.5, ease: "easeOut" }}
                                 />
                                 <defs>
-                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stopColor="#7c3aed" />
-                                        <stop offset="100%" stopColor="#22d3ee" />
+                                    <linearGradient id="emerald-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="#10B981" />
+                                        <stop offset="100%" stopColor="#A3E635" />
                                     </linearGradient>
                                 </defs>
                             </svg>
 
                             <div className="text-center z-10 mb-2 transform -translate-y-4">
-                                <span className="text-5xl font-black italic">{Math.round(analytics?.overallProgress || 0)}<span className="text-2xl opacity-40">%</span></span>
+                                <span className="text-6xl font-black italic tracking-tighter text-white">{Math.round(analytics?.overallProgress || 0)}<span className="text-2xl opacity-20 ml-1">%</span></span>
                             </div>
                         </div>
 
-                        <div className="w-full mt-10 p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className="w-full mt-12 p-1 rounded-full bg-white/[0.02] border border-white/5">
+                            <div className="h-2 w-full bg-transparent rounded-full overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${analytics?.overallProgress || 0}%` }}
-                                    className="h-full bg-gradient-to-r from-cyber-purple to-cyber-cyan"
+                                    className="h-full bg-gradient-to-r from-emerald-500 to-lime-400"
                                 />
                             </div>
                         </div>
@@ -233,92 +304,114 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Quiz Performance Widget */}
-                <Card className="lg:col-span-7 p-8">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-black italic">Quiz Performance</h3>
-                        <div className="flex gap-2">
-                            <Badge variant="success">{Math.round(analytics?.quizPassRate || 0)}% Pass Rate</Badge>
-                            <Badge variant="info">{analytics?.quizAttempts || 0} Attempts</Badge>
+                <Card className="lg:col-span-7 p-10 rounded-[3rem] bg-[#111111]/40 border-white/5">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-black italic uppercase tracking-tight">Performance Analytics</h3>
+                            <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Neural Score History</p>
                         </div>
-                    </div>
-
-                    <div className="h-48 w-full relative mb-8 flex items-end gap-1 px-2 border-b border-white/5 pb-2">
-                        {(analytics?.quizAttempts || 0) > 0 ? (
-                            // Real Graph for Users with Data
-                            (analytics?.quizHistory || []).map((h, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${h}%` }}
-                                    transition={{ delay: i * 0.05 }}
-                                    className="flex-1 bg-cyber-purple/20 border-t-2 border-cyber-purple rounded-t-sm relative group"
-                                >
-                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {h}%
-                                    </div>
-                                </motion.div>
-                            ))
-                        ) : (
-                            // Empty State
-                            <div className="h-full w-full flex flex-col items-center justify-center text-white/20">
-                                <TrendingUp size={48} className="mb-2 opacity-20" />
-                                <p className="text-xs font-bold uppercase tracking-widest">No Quiz Data Recorded</p>
-                                <p className="text-[10px] mt-1">Complete a simulation to see insights</p>
+                        <div className="flex gap-3">
+                            <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                                {Math.round(analytics?.quizPassRate || 0)}% PASS
                             </div>
-                        )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                    <div className="h-48 w-full relative mb-10 flex items-end gap-1.5 px-2 border-b border-white/5 pb-4">
+                        {analytics?.quizHistory?.map((h, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: `${h}%`, opacity: 1 }}
+                                transition={{ delay: i * 0.05, duration: 0.8 }}
+                                className="flex-1 bg-emerald-500/10 border-t-2 border-emerald-500/40 rounded-t-lg relative group hover:bg-emerald-500/30 transition-colors"
+                            >
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#0A0A0A] border border-white/10 text-white text-[10px] font-black py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
+                                    {h}%
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-cyber-cyan animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Real-time Metrics Applied</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 italic">Live Metrics Synchronized</span>
                         </div>
-                        <Link to="/certificates" className="text-[10px] font-black uppercase tracking-widest text-cyber-purple hover:text-white transition-colors flex items-center gap-2">
-                            View Certificates <ChevronRight size={14} />
+                        <Link to="/quizzes" className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 hover:text-white transition-colors flex items-center gap-3 group">
+                            Full Analysis <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </div>
                 </Card>
 
+                {/* Human Risk Intelligence Layer */}
+                <div className="lg:col-span-12 pt-8">
+                    <div className="flex items-center gap-4 mb-10">
+                        <Fingerprint size={24} className="text-emerald-400" />
+                        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Human Risk <span className="text-emerald-400">Intelligence</span></h2>
+                        <Badge variant="emerald" className="animate-pulse">Premium Analysis</Badge>
+                    </div>
+                    <HumanRiskIntelligence hri={hri} />
+                </div>
+
+                {/* Neural Training Roadmap & Smart Start */}
+                <div className="lg:col-span-12">
+                    <NeuralRoadmap 
+                        roadmapData={roadmap} 
+                        onSmartStart={handleSmartStart} 
+                    />
+                </div>
+
                 {/* Recent Activity List */}
-                <Card className="lg:col-span-12 p-10">
-                    <h3 className="text-2xl font-black italic mb-8">Recent Activity</h3>
-                    <div className="space-y-4">
+                <Card className="lg:col-span-12 p-12 rounded-[4rem] bg-[#111111]/40 border-white/5">
+                    <div className="flex items-center justify-between mb-12">
+                        <h3 className="text-3xl font-black italic uppercase tracking-tighter">Recent activity</h3>
+                        <div className="flex items-center gap-3 bg-white/[0.03] p-1.5 rounded-2xl border border-white/5">
+                            {['all', 'low'].map(f => (
+                                <button
+                                    key={f}
+                                    onClick={() => setFilter(f)}
+                                    className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all rounded-xl ${filter === f
+                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                        : 'text-white/20 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-5">
                         {filteredLogs.map((log) => (
-                            <div
+                            <motion.div
+                                whileHover={{ x: 5 }}
                                 key={log.id}
                                 onClick={() => setSelectedLog(log)}
-                                className="flex items-center justify-between p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all group cursor-pointer"
+                                className="flex items-center justify-between p-7 rounded-[2rem] bg-white/[0.01] border border-white/5 hover:border-emerald-500/20 hover:bg-emerald-500/[0.02] transition-all group cursor-pointer"
                             >
-                                <div className="flex items-center gap-5">
-                                    <div className={`p-2.5 rounded-xl ${log.type === 'success' ? 'bg-green-400/10 text-green-400' : 'bg-cyber-purple/10 text-cyber-purple'
-                                        }`}>
-                                        <Activity size={20} />
+                                <div className="flex items-center gap-6">
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${log.type === 'success' ? 'bg-emerald-500/5 text-emerald-400' : 'bg-white/5 text-white/40'}`}>
+                                        <Activity size={24} />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black tracking-tight text-white">{log.action} <span className="text-white/40 font-bold">{log.target}</span></p>
+                                        <p className="text-sm font-black tracking-tight text-white uppercase italic">{log.action}</p>
+                                        <p className="text-[10px] text-white/20 font-black uppercase tracking-widest mt-1">{log.target}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6">
-                                    <span className={`text-sm font-black italic ${log.type === 'success' ? 'text-green-400' : 'text-cyber-purple'}`}>{log.xp}</span>
-                                    <button className="text-white/20 group-hover:text-white transition-colors">
-                                        <ChevronRight size={18} />
-                                    </button>
+                                <div className="flex items-center gap-10">
+                                    <div className="hidden md:flex flex-col items-end">
+                                        <span className={`text-xs font-black italic tracking-widest ${log.type === 'success' ? 'text-emerald-400' : 'text-white/40'}`}>{log.xp}</span>
+                                        <span className="text-[8px] font-bold text-white/10 uppercase tracking-[0.3em] mt-1">Authorized Node</span>
+                                    </div>
+                                    <ChevronRight size={20} className="text-white/10 group-hover:text-emerald-400 transition-all" />
                                 </div>
-                            </div>
+                            </motion.div>
                         ))}
-                    </div>
-
-                    <div className="mt-8 text-center">
-                        <button
-                            onClick={() => navigate('/profile')}
-                            className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-white transition-colors"
-                        >
-                            View More Details
-                        </button>
                     </div>
                 </Card>
             </div>
-            {/* Threat Insight Panel Overlay */}
+
             <ThreatInsightPanel
                 isOpen={showThreatPanel}
                 onClose={() => setShowThreatPanel(false)}
@@ -326,60 +419,97 @@ export default function DashboardPage() {
             />
 
             {/* Log Detail Modal */}
-            {selectedLog && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                        onClick={() => setSelectedLog(null)}
-                    />
-                    <div className="relative w-full max-w-md bg-[#0b0f1a] border border-white/10 rounded-3xl p-8 shadow-2xl">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-black italic text-white">Activity <span className="text-cyber-purple">Details</span></h3>
-                            <button
-                                onClick={() => setSelectedLog(null)}
-                                className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-1">Action</span>
-                                <span className="text-base font-bold text-white">{selectedLog.action}</span>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-1">Resource / Target</span>
-                                <span className="text-base font-mono text-cyber-cyan">{selectedLog.target || 'N/A'}</span>
-                            </div>
-
-                            <div className="flex gap-4">
-                                <div className="flex-1 p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-1">Impact</span>
-                                    <span className="text-sm font-bold text-green-400">{selectedLog.xp}</span>
-                                </div>
-                                <div className="flex-1 p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-1">Status</span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                        <span className="text-sm font-bold text-white">Verified</span>
+            <AnimatePresence>
+                {selectedLog && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/90"
+                            onClick={() => setSelectedLog(null)}
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-xl bg-[#111111] border border-white/10 rounded-[4rem] p-12 shadow-[0_0_100px_rgba(0,0,0,0.8)]"
+                        >
+                            <div className="flex items-center justify-between mb-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                                        <Terminal size={24} />
                                     </div>
+                                    <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Activity <span className="text-emerald-400">Log</span></h3>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedLog(null)}
+                                    className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/5 text-white/20 hover:text-white transition-all"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <DetailItem label="Action Descriptor" value={selectedLog.action} />
+                                <DetailItem label="Resource Identifier" value={selectedLog.target || 'N/A'} isMono />
+                                <div className="grid grid-cols-2 gap-6 pt-4">
+                                    <DetailItem label="Node Impact" value={selectedLog.xp} isEmerald />
+                                    <DetailItem label="Integrity Status" value="VERIFIED" isEmerald />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
-                            <button
-                                onClick={() => setSelectedLog(null)}
-                                className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-widest transition-all"
-                            >
-                                Close
-                            </button>
-                        </div>
+                            <div className="mt-12 pt-8 border-t border-white/5">
+                                <Button
+                                    onClick={() => setSelectedLog(null)}
+                                    className="w-full h-16 rounded-full bg-emerald-500 text-black font-black uppercase tracking-widest text-[10px] hover:bg-white transition-all"
+                                >
+                                    Close Intelligence Report
+                                </Button>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 }
+
+function StatCard({ icon: Icon, label, value, color }) {
+    const colors = {
+        emerald: "text-emerald-400 bg-emerald-500/5 border-emerald-500/10",
+        lime: "text-lime-400 bg-lime-500/5 border-lime-500/10"
+    };
+    return (
+        <motion.div 
+            whileHover={{ y: -5 }}
+            className={`p-7 rounded-[2.5rem] bg-[#111111]/40 border border-white/5  flex flex-col gap-6 group hover:border-emerald-500/30 transition-all`}
+        >
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${colors[color]}`}>
+                <Icon size={24} />
+            </div>
+            <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-1 group-hover:text-white/40 transition-colors">{label}</p>
+                <p className="text-3xl font-black italic tracking-tighter text-white">{value}</p>
+            </div>
+        </motion.div>
+    );
+}
+
+function DetailItem({ label, value, isMono, isEmerald }) {
+    return (
+        <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 block mb-2">{label}</span>
+            <span className={`text-base font-black uppercase italic tracking-tight ${isMono ? 'font-mono text-emerald-400' : isEmerald ? 'text-emerald-400' : 'text-white'}`}>
+                {value}
+            </span>
+        </div>
+    );
+}
+
+function X({ size }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+    );
+}
+

@@ -36,6 +36,7 @@ export default function CourseManagement() {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
+        category: 'executive_intelligence',
         published: false
     });
 
@@ -105,6 +106,7 @@ export default function CourseManagement() {
         setFormData({
             title: course.title,
             description: course.description || '',
+            category: course.category || 'executive_intelligence',
             published: course.published || false
         });
         setShowEditModal(true);
@@ -123,6 +125,7 @@ export default function CourseManagement() {
         setFormData({
             title: '',
             description: '',
+            category: 'executive_intelligence',
             published: false
         });
         setSelectedCourse(null);
@@ -160,12 +163,12 @@ export default function CourseManagement() {
 
             {/* Filters */}
             <Card className="p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-purple/5 rounded-full blur-3xl -z-10" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-purple/5 rounded-full  -z-10" />
 
                 <div className="flex flex-col lg:flex-row gap-6">
                     {/* Search Bar */}
                     <div className="flex-1 relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyber-purple/20 to-cyber-cyan/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyber-purple/20 to-cyber-cyan/20 rounded-2xl  opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <div className="relative">
                             <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-cyber-purple group-hover:text-cyber-cyan transition-colors duration-300" />
                             <input
@@ -301,7 +304,7 @@ export default function CourseManagement() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/80  z-50 flex items-center justify-center p-4"
                         onClick={() => {
                             setShowCreateModal(false);
                             setShowEditModal(false);
@@ -363,6 +366,26 @@ export default function CourseManagement() {
                                 </div>
 
 
+                                 {/* Category */}
+                                <div>
+                                    <label className="block text-sm font-black uppercase tracking-widest text-white/60 mb-2">
+                                        Security Domain
+                                    </label>
+                                    <select
+                                        value={formData.category}
+                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                        className="w-full px-4 py-3 bg-white/[0.03] border-2 border-white/10 rounded-xl text-white focus:border-cyber-purple focus:bg-white/[0.05] transition-all outline-none"
+                                    >
+                                        <option value="executive_intelligence">Executive Intelligence</option>
+                                        <option value="tactical_defense">Tactical Defense</option>
+                                        <option value="cognitive_security">Cognitive Security</option>
+                                        <option value="advanced_ai_adaptive">Advanced AI Adaptive</option>
+                                        <option value="phishing">Phishing (Legacy)</option>
+                                        <option value="smishing">Smishing (Legacy)</option>
+                                        <option value="vishing">Vishing (Legacy)</option>
+                                        <option value="social_engineering">Social Engineering (Legacy)</option>
+                                    </select>
+                                </div>
 
                                 {/* Published */}
                                 <div className="flex items-center gap-3">
@@ -411,7 +434,7 @@ export default function CourseManagement() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/80  z-50 flex items-center justify-center p-4"
                         onClick={() => {
                             setShowDeleteDialog(false);
                             setSelectedCourse(null);
@@ -469,3 +492,4 @@ export default function CourseManagement() {
         </div>
     );
 }
+

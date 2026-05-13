@@ -25,13 +25,28 @@ exports.getMyAchievements = async (req, res, next) => {
     try {
         const myAchievements = await UserAchievement.find({ user: req.user.id }).populate('achievement');
         const totalAvailable = await Achievement.countDocuments();
+
+        const normalised = myAchievements.map((ua, idx) => ({
+            _id: ua._id,
+            earnedAt: ua.unlockedAt || ua.createdAt,
+            achievement: ua.achievement
+                ? ua.achievement
+                : {
+                      name: `Achievement #${idx + 1}`,
+                      description: 'Achievement earned on the platform',
+                      type: 'milestone',
+                      points: 0,
+                      icon: 'trophy'
+                  }
+        }));
+
         const stats = {
-            totalPoints: myAchievements.reduce((acc, curr) => acc + (curr.achievement?.points || 0), 0),
-            unlockedCount: myAchievements.length,
+            totalPoints: normalised.reduce((acc, curr) => acc + (curr.achievement?.points || 0), 0),
+            unlockedCount: normalised.length,
             totalAvailable,
-            progress: totalAvailable > 0 ? Math.round((myAchievements.length / totalAvailable) * 100) : 0
+            progress: totalAvailable > 0 ? Math.round((normalised.length / totalAvailable) * 100) : 0
         };
-        res.status(200).json({ success: true, data: { achievements: myAchievements, stats } });
+        res.status(200).json({ success: true, data: { achievements: normalised, stats } });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Server Error' });
@@ -57,7 +72,20 @@ exports.getAllBadges = async (req, res, next) => {
 exports.getMyBadges = async (req, res, next) => {
     try {
         const myBadges = await UserBadge.find({ user: req.user.id }).populate('badge');
-        res.status(200).json({ success: true, count: myBadges.length, data: myBadges });
+        const normalised = myBadges.map((ub, idx) => ({
+            _id: ub._id,
+            earnedAt: ub.unlockedAt || ub.createdAt,
+            badge: ub.badge
+                ? ub.badge
+                : {
+                      name: `Badge #${idx + 1}`,
+                      description: 'Badge earned on the platform',
+                      type: 'technical',
+                      points: 0,
+                      icon: 'medal'
+                  }
+        }));
+        res.status(200).json({ success: true, count: normalised.length, data: normalised });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Server Error' });

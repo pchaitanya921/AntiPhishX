@@ -146,3 +146,4 @@ const ChatSidebar = ({ sessions, currentSessionId, onSessionSelect, onNewChat, o
 };
 
 export default ChatSidebar;
+

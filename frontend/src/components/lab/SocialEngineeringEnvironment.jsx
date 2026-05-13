@@ -222,3 +222,4 @@ const SocialEngineeringEnvironment = ({ content, onComplete }) => {
 };
 
 export default SocialEngineeringEnvironment;
+

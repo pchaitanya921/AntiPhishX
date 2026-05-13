@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui';
-import { User, Mail, Shield, Camera, Save, X } from 'lucide-react';
+import { User, Mail, Shield, Camera, Save, X, ChevronRight, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { certificatesAPI } from '../services/api';
+import { Badge } from '../components/ui';
+import { useEffect } from 'react';
 
 export default function ProfilePage() {
     const { user, updateProfile } = useAuth();
@@ -11,6 +14,8 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [profileImage, setProfileImage] = useState(user?.profileImage || null);
     const [loading, setLoading] = useState(false);
+    const [certsLoading, setCertsLoading] = useState(true);
+    const [certificates, setCertificates] = useState([]);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [formData, setFormData] = useState({
@@ -18,6 +23,23 @@ export default function ProfilePage() {
         lastName: user?.lastName || '',
         email: user?.email || ''
     });
+
+    useEffect(() => {
+        const fetchCerts = async () => {
+            try {
+                setCertsLoading(true);
+                const res = await certificatesAPI.getMyCertificates();
+                if (res.data.success) {
+                    setCertificates(res.data.data);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setCertsLoading(false);
+            }
+        };
+        fetchCerts();
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -142,14 +164,14 @@ export default function ProfilePage() {
         <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden">
             {/* Background FX */}
             <div className="absolute inset-0 bg-cyber-grid opacity-10" />
-            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyber-purple/10 blur-[150px] rounded-full" />
+            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyber-purple/10  rounded-full" />
 
             <div className="relative z-10 w-full max-w-2xl">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="backdrop-blur-3xl bg-gradient-to-br from-white/10 to-white/5 p-10 rounded-3xl border border-white/20 shadow-2xl"
+                    className=" bg-gradient-to-br from-white/10 to-white/5 p-10 rounded-3xl border border-white/20 shadow-2xl"
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between mb-8">
@@ -200,7 +222,7 @@ export default function ProfilePage() {
                                     />
                                     <label
                                         htmlFor="profile-image"
-                                        className="absolute bottom-2 right-2 p-3 rounded-xl bg-cyber-purple/80 backdrop-blur-sm border border-cyber-purple hover:bg-cyber-purple transition-all cursor-pointer"
+                                        className="absolute bottom-2 right-2 p-3 rounded-xl bg-cyber-purple/80  border border-cyber-purple hover:bg-cyber-purple transition-all cursor-pointer"
                                     >
                                         <Camera size={18} className="text-white" />
                                     </label>
@@ -209,9 +231,30 @@ export default function ProfilePage() {
                         </div>
                         <div className="mt-4 text-center">
                             <h2 className="text-2xl font-black text-white">{formData.firstName} {formData.lastName}</h2>
-                            <p className="text-cyber-purple font-bold uppercase text-sm tracking-wider mt-1">
-                                {user?.role === 'instructor' ? 'Lead Instructor' : user?.role === 'admin' ? 'Administrator' : 'Security Learner'}
-                            </p>
+                            <div className="flex flex-col items-center gap-2 mt-1">
+                                <p className="text-cyber-purple font-bold uppercase text-sm tracking-wider">
+                                    {user?.role === 'instructor' ? 'Lead Instructor' : user?.role === 'admin' ? 'Administrator' : 'Security Learner'}
+                                </p>
+                                {user?.currentPlan === 'enterprise_lattice' && (
+                                    <motion.div 
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyber-cyan/10 border border-cyber-cyan/30 shadow-[0_0_20px_rgba(6,182,212,0.2)]"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-cyber-cyan animate-pulse" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyber-cyan">
+                                            ENTERPRISE LATTICE — {user?.billingCycle?.toUpperCase() || 'MONTHLY'} PLAN
+                                        </span>
+                                    </motion.div>
+                                )}
+                                {(user?.currentPlan === 'core_node' || user?.currentPlan === 'neural_advanced') && user?.billingCycle !== 'none' && (
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                                            {user?.currentPlan?.replace('_', ' ')} — {user?.billingCycle?.toUpperCase()} PLAN
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -313,12 +356,49 @@ export default function ProfilePage() {
                         )}
                     </form>
 
-                    {/* Additional Info */}
-                    <div className="mt-8 pt-8 border-t border-white/10">
+                    {/* Certifications & Achievements */}
+                    <div className="mt-12 pt-12 border-t border-white/10">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Professional Certifications</h3>
+                            <button 
+                                onClick={() => navigate('/certificates')}
+                                className="text-cyber-purple text-[10px] font-black uppercase tracking-widest hover:text-white transition-all flex items-center gap-2"
+                            >
+                                View All <ChevronRight size={14} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {certsLoading ? (
+                                <div className="py-10 flex justify-center"><div className="w-8 h-8 border-2 border-cyber-purple/20 border-t-cyber-purple rounded-full animate-spin" /></div>
+                            ) : certificates.length > 0 ? (
+                                certificates.slice(0, 2).map((cert) => (
+                                    <div key={cert._id} className="flex items-center gap-5 p-5 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-cyber-purple/30 transition-all group">
+                                        <div className="w-12 h-12 rounded-2xl bg-cyber-purple/10 flex items-center justify-center text-cyber-purple group-hover:scale-110 transition-transform">
+                                            <Award size={24} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-white font-bold uppercase text-xs tracking-tight italic">{cert.domain.replace(/_/g, ' ')}</p>
+                                            <p className="text-white/30 text-[9px] uppercase tracking-widest font-black mt-1">{cert.level} tier Mastery</p>
+                                        </div>
+                                        <Badge variant="outline" className="border-white/10 text-white/20 text-[8px] uppercase tracking-widest">ID: {cert.certificateId.split('-')[1]}</Badge>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="py-12 text-center rounded-3xl border-2 border-dashed border-white/5">
+                                    <Award className="w-12 h-12 text-white/5 mx-auto mb-4" />
+                                    <p className="text-white/20 text-xs font-bold uppercase tracking-widest">No Certifications Earned Yet</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Member Since & Account Status */}
+                    <div className="mt-12 pt-8 border-t border-white/10">
                         <div className="grid md:grid-cols-2 gap-6 text-sm">
                             <div>
                                 <p className="text-white/40 uppercase tracking-wider font-bold mb-2">Member Since</p>
-                                <p className="text-white font-semibold">January 2026</p>
+                                <p className="text-white font-semibold">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'January 2026'}</p>
                             </div>
                             <div>
                                 <p className="text-white/40 uppercase tracking-wider font-bold mb-2">Account Status</p>
@@ -334,3 +414,4 @@ export default function ProfilePage() {
         </div>
     );
 }
+

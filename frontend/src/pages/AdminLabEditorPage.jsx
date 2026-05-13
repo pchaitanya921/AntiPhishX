@@ -12,13 +12,10 @@ import { Card, Button, Input, Select } from '../components/ui';
 import api from '../services/api';
 
 const TOPICS = [
-    { id: 'phishing', name: 'Phishing' },
-    { id: 'vishing', name: 'Vishing' },
-    { id: 'smishing', name: 'Smishing' },
-    { id: 'qr_code', name: 'QR/Quishing' },
-    { id: 'social_engineering', name: 'Social Engineering' },
-    { id: 'advanced_threats', name: 'Advanced Threats' },
-    { id: 'malware_detection', name: 'Malware' }
+    { id: 'executive_intelligence', name: 'Executive Intelligence' },
+    { id: 'tactical_defense', name: 'Tactical Defense' },
+    { id: 'cognitive_security', name: 'Cognitive Security' },
+    { id: 'advanced_ai_adaptive', name: 'AI Adaptive Threats' }
 ];
 
 const LAB_TYPES = [
@@ -51,7 +48,7 @@ export default function AdminLabEditorPage() {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        topic: 'phishing',
+        topic: 'executive_intelligence',
         level: 'beginner',
         type: 'email',
         difficulty: 1,
@@ -468,3 +465,4 @@ export default function AdminLabEditorPage() {
         </div>
     );
 }
+

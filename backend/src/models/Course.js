@@ -12,6 +12,11 @@ const courseSchema = new mongoose.Schema({
         required: [true, 'Please add a description'],
         maxlength: [500, 'Description cannot be more than 500 characters']
     },
+    category: {
+        type: String,
+        required: [true, 'Please add a category'],
+        enum: ['phishing', 'vishing', 'smishing', 'qr_code', 'social_engineering', 'advanced_threats', 'malware_detection', 'executive_intelligence', 'tactical_defense', 'cognitive_security', 'advanced_ai_adaptive']
+    },
     level: {
         type: String,
         enum: ['beginner', 'intermediate', 'advanced'],

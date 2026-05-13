@@ -50,7 +50,16 @@ const VishingEnvironment = ({ content, level, onComplete }) => {
         }
     }, [revealIdx]);
 
-    const handleAnswer = () => setCallStatus('connected');
+    const handleAnswer = () => {
+        const hesitation = elapsed; // Time from incoming to answer
+        window.dispatchEvent(new CustomEvent('labTelemetryUpdate', {
+            detail: {
+                hesitationPatterns: [hesitation],
+                urgencySusceptibility: hesitation < 2 ? 1 : 0 // Faster answer might indicate high urgency susceptibility
+            }
+        }));
+        setCallStatus('connected');
+    };
     const handleDecline = () => { setCallStatus('declined'); clearInterval(timerRef.current); };
     const handleEnd = () => {
         setCallStatus('ended');
@@ -80,7 +89,7 @@ const VishingEnvironment = ({ content, level, onComplete }) => {
                 <div className="flex-1 bg-gradient-to-b from-slate-800 via-slate-900 to-black flex flex-col items-center relative overflow-hidden">
 
                     {/* Blurred radial glow */}
-                    <div className={`absolute top-8 w-48 h-48 rounded-full blur-3xl transition-all duration-1000 ${callStatus === 'connected' ? 'bg-green-900/40' : callStatus === 'incoming' ? 'bg-indigo-900/40 animate-pulse' : 'bg-red-900/30'}`} />
+                    <div className={`absolute top-8 w-48 h-48 rounded-full  transition-all duration-1000 ${callStatus === 'connected' ? 'bg-green-900/40' : callStatus === 'incoming' ? 'bg-indigo-900/40 animate-pulse' : 'bg-red-900/30'}`} />
 
                     {/* Caller Info */}
                     <div className="z-10 flex flex-col items-center mt-10 space-y-3">
@@ -167,7 +176,7 @@ const VishingEnvironment = ({ content, level, onComplete }) => {
             </div>
 
             {/* ─── Transcript Panel (desktop) ─── */}
-            <div className="hidden lg:flex flex-col w-[360px] h-[580px] bg-slate-900/60 backdrop-blur-md rounded-2xl border border-white/5 overflow-hidden shadow-2xl self-center">
+            <div className="hidden lg:flex flex-col w-[360px] h-[580px] bg-slate-900/60  rounded-2xl border border-white/5 overflow-hidden shadow-2xl self-center">
                 <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between bg-slate-900/60">
                     <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${callStatus === 'connected' ? 'bg-red-500 animate-pulse' : 'bg-slate-600'}`} />
@@ -186,10 +195,12 @@ const VishingEnvironment = ({ content, level, onComplete }) => {
                     {(callStatus === 'connected' || callStatus === 'ended') && transcriptLines.length > 0 && (
                         transcriptLines.slice(0, revealIdx + 1).map((line, idx) => (
                             <div key={idx} className="space-y-1">
-                                <span className={`text-[10px] font-bold uppercase tracking-wider ${line.speaker === 'EMPLOYEE' || line.speaker === 'You' ? 'text-blue-400' : 'text-purple-400'}`}>
-                                    {line.speaker}
-                                </span>
-                                <p className={`text-sm text-slate-200 leading-relaxed ${isExpert ? 'blur-sm hover:blur-none transition-all cursor-crosshair' : ''}`}>
+                                {line.speaker !== 'INFO' && (
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${line.speaker === 'EMPLOYEE' || line.speaker === 'You' ? 'text-blue-400' : 'text-purple-400'}`}>
+                                        {line.speaker}
+                                    </span>
+                                )}
+                                <p className={`text-sm text-slate-200 leading-relaxed ${line.speaker === 'INFO' ? 'italic text-slate-400' : ''}`}>
                                     {line.text}
                                 </p>
                             </div>
@@ -197,7 +208,7 @@ const VishingEnvironment = ({ content, level, onComplete }) => {
                     )}
 
                     {callStatus === 'connected' && transcriptLines.length === 0 && (
-                        <div className="flex items-center justify-center h-full text-slate-500 text-sm italic">
+                        <div className="flex items-center justify-center h-full text-slate-300 text-sm italic">
                             No detailed transcript available. Review the scenario panel.
                         </div>
                     )}
@@ -245,20 +256,30 @@ function parseTranscript(rawString, arrayTranscript) {
     if (!rawString || typeof rawString !== 'string') return [];
 
     const lines = [];
-    // Split by speaker tags: CALLER/EMPLOYEE/SCAMMER/VICTIM/CALLER:
-    const regex = /\n*(CALLER|EMPLOYEE|SCAMMER|VICTIM|OFFICIAL|AGENT|CUSTOMER|BANK|USER|YOU|THREAT ACTOR|ATTACKER)\s*:\s*"?/gi;
-    const parts = rawString.split(regex);
-
-    // parts alternates: [before_first, speaker1, text1, speaker2, text2, ...]
-    for (let i = 1; i < parts.length - 1; i += 2) {
-        const speaker = parts[i].trim().toUpperCase();
-        let text = parts[i + 1]?.replace(/"?\s*$/, '').trim() || '';
-        // Clean up escaped quotes and trailing quote
-        text = text.replace(/\\"/g, '"').replace(/"\s*$/, '').trim();
-        if (text) lines.push({ speaker, text });
+    const blocks = rawString.split(/\n\n+/);
+    
+    for (const block of blocks) {
+        if (!block.trim()) continue;
+        
+        // Find if this block has a colon in the first line
+        const firstLineEnd = block.indexOf('\n') === -1 ? block.length : block.indexOf('\n');
+        const firstLine = block.substring(0, firstLineEnd);
+        const colonIndex = firstLine.indexOf(':');
+        
+        if (colonIndex !== -1 && colonIndex < 80) { // Limit length to avoid matching long sentences
+            const speaker = firstLine.substring(0, colonIndex).trim().toUpperCase();
+            let text = block.substring(colonIndex + 1).trim();
+            // clean up quotes
+            text = text.replace(/^"|"$/g, '').trim();
+            text = text.replace(/\\"/g, '"');
+            lines.push({ speaker, text });
+        } else {
+            lines.push({ speaker: 'INFO', text: block.trim() });
+        }
     }
 
     return lines;
 }
 
 export default VishingEnvironment;
+

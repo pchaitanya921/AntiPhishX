@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Search, AlertTriangle, CheckCircle, XCircle, Loader, Copy, ChevronDown, ChevronUp, Link, Mail, Smartphone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { phishingAPI } from '../services/api';
 
 const SEVERITY_COLOR = { LOW: 'text-yellow-400', MEDIUM: 'text-orange-400', HIGH: 'text-red-400' };
 const VERDICT_CONFIG = {
@@ -53,6 +54,7 @@ export default function PhishingScanner() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showIndicators, setShowIndicators] = useState(true);
+    const [engine, setEngine] = useState('groq-ai');
 
 
     const handleScan = async () => {
@@ -61,17 +63,22 @@ export default function PhishingScanner() {
         setError('');
         setResult(null);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch('/api/phishing/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ type, content }),
-            });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error || 'Analysis failed');
-            setResult(data.data);
+            const res = await phishingAPI.analyze({ type, content });
+            if (!res.data.success) throw new Error(res.data.error || 'Analysis failed');
+            setResult(res.data.data);
+            setEngine(res.data.data.engine || 'groq-ai');
         } catch (err) {
-            setError(err.message);
+            const serverMsg = err.response?.data?.message || err.response?.data?.error;
+            const fallback = err.message;
+            const status = err.response?.status;
+
+            if (status === 503 || status === 401) {
+                setError('⚠️ AI service is currently unavailable. The API key may be expired. Please contact the administrator.');
+            } else if (status === 429) {
+                setError('⚠️ Too many requests. Please wait a moment and try again.');
+            } else {
+                setError(serverMsg || fallback || 'An unexpected error occurred. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -186,6 +193,13 @@ export default function PhishingScanner() {
                                     <span className={`text-xs px-2 py-0.5 rounded-full border ${verdict.bg} ${verdict.color} font-bold`}>
                                         {result.analysis?.confidence} CONFIDENCE
                                     </span>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ml-auto ${
+                                        engine === 'rule-based'
+                                            ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
+                                            : 'bg-cyber-cyan/10 border border-cyber-cyan/30 text-cyber-cyan'
+                                    }`}>
+                                        {engine === 'rule-based' ? '⚡ Rule Engine' : '🤖 Groq AI'}
+                                    </span>
                                 </div>
                                 <p className={`text-sm leading-relaxed ${isLight ? 'text-slate-600' : 'text-white/70'}`}>
                                     {result.analysis?.explanation}
@@ -251,3 +265,4 @@ export default function PhishingScanner() {
         </div>
     );
 }
+

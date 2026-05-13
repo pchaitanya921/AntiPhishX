@@ -50,7 +50,7 @@ exports.updateCourseProgress = async (userId, courseId) => {
             const averageScore = Math.round(totalScore / allLabIds.length);
 
             // Issue Certificate
-            await this.issueCertificate(userId, courseId, averageScore);
+            await exports.issueCertificate(userId, courseId, averageScore);
         }
 
         await enrollment.save();

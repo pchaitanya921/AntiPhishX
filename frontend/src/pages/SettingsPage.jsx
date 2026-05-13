@@ -90,7 +90,7 @@ export default function SettingsPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="backdrop-blur-2xl bg-gradient-to-br from-white/10 to-white/5 p-6 rounded-3xl border border-white/20"
+                    className=" bg-gradient-to-br from-white/10 to-white/5 p-6 rounded-3xl border border-white/20"
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-3 rounded-xl bg-cyber-purple/20 border border-cyber-purple/30">
@@ -115,7 +115,7 @@ export default function SettingsPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="backdrop-blur-2xl bg-gradient-to-br from-white/10 to-white/5 p-6 rounded-3xl border border-white/20"
+                    className=" bg-gradient-to-br from-white/10 to-white/5 p-6 rounded-3xl border border-white/20"
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-3 rounded-xl bg-cyan-500/20 border border-cyan-500/30">
@@ -154,7 +154,7 @@ export default function SettingsPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="backdrop-blur-2xl bg-gradient-to-br from-white/10 to-white/5 p-6 rounded-3xl border border-white/20"
+                    className=" bg-gradient-to-br from-white/10 to-white/5 p-6 rounded-3xl border border-white/20"
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-3 rounded-xl bg-red-500/20 border border-red-500/30">
@@ -199,7 +199,7 @@ export default function SettingsPage() {
 
                 {/* Change Password Modal */}
                 {showPasswordModal && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 bg-black/80  flex items-center justify-center z-50 p-4">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -259,7 +259,7 @@ export default function SettingsPage() {
 
                 {/* 2FA Modal */}
                 {show2FAModal && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 bg-black/80  flex items-center justify-center z-50 p-4">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -294,3 +294,4 @@ export default function SettingsPage() {
         </div>
     );
 }
+

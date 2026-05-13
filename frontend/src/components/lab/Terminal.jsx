@@ -107,33 +107,48 @@ const Terminal = ({ content, steps, onStepComplete }) => {
     };
 
     return (
-        <div className="flex flex-col w-full min-h-[500px] bg-[#1e1e1e] rounded-lg overflow-hidden font-mono text-sm border border-[#333] shadow-2xl">
+        <div className="flex flex-col w-full h-full min-h-[500px] bg-[#0A0A0A]/90  rounded-[2rem] overflow-hidden font-mono text-sm border border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative">
+            <div className="absolute inset-0 bg-grid-white/[0.01] pointer-events-none" />
+            
             {/* Title Bar */}
-            <div className="bg-[#2d2d2d] px-4 py-2 flex items-center justify-between select-none">
-                <div className="flex items-center gap-2 text-white/80">
-                    <TerminalIcon size={14} />
-                    <span className="font-medium text-xs">analyst@antiphishx:~</span>
+            <div className="bg-white/[0.02] border-b border-white/5 px-8 py-5 flex items-center justify-between select-none relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                        <TerminalIcon size={16} />
+                    </div>
+                    <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-0.5">Tactical Analysis Node</div>
+                        <div className="text-xs font-black italic text-white uppercase tracking-wider flex items-center gap-2">
+                            analyst@antiphishx
+                            <span className="text-[10px] text-emerald-500 animate-pulse">•</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-4 text-white/40">
-                    <X size={14} className="hover:text-red-400 cursor-pointer" />
+                <div className="flex items-center gap-6 text-white/10">
+                    <div className="flex gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
+                    </div>
                 </div>
             </div>
 
             {/* Terminal Window */}
             <div
                 ref={terminalRef}
-                className="flex-1 p-4 overflow-y-auto terminal-scrollbar"
+                className="flex-1 p-8 overflow-y-auto terminal-scrollbar relative z-10"
                 onClick={() => document.getElementById('terminal-input')?.focus()}
             >
-                <div className="space-y-1">
+                <div className="space-y-2">
                     {history.map((line, i) => (
-                        <div key={i} className={`${line.type === 'input' ? 'text-white font-bold' :
-                            line.type === 'success' ? 'text-green-400 font-semibold' :
-                                line.type === 'error' ? 'text-yellow-400' :
-                                    'text-green-400'
-                            }`}>
+                        <div key={i} className={`leading-relaxed ${
+                            line.type === 'input' ? 'text-white font-bold' :
+                            line.type === 'success' ? 'text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]' :
+                            line.type === 'error' ? 'text-amber-400' :
+                            'text-emerald-500/80'
+                        }`}>
                             {line.type === 'input' ? (
-                                <span className="text-blue-400 mr-2">analyst@antiphishx:~$</span>
+                                <span className="text-emerald-500/40 mr-3 font-black">λ</span>
                             ) : null}
                             {line.text}
                         </div>
@@ -141,22 +156,26 @@ const Terminal = ({ content, steps, onStepComplete }) => {
                 </div>
 
                 {/* Input Line */}
-                <form onSubmit={handleCommand} className="mt-1 flex items-center">
-                    <span className="text-blue-400 mr-2 shrink-0">analyst@antiphishx:~$</span>
+                <form onSubmit={handleCommand} className="mt-4 flex items-center group">
+                    <span className="text-emerald-500/60 mr-3 font-black animate-pulse">λ</span>
                     <input
                         id="terminal-input"
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        className="flex-1 bg-transparent border-none outline-none text-white caret-white"
+                        className="flex-1 bg-transparent border-none outline-none text-white caret-emerald-500 font-bold text-sm tracking-wide"
                         autoComplete="off"
                         autoFocus
                     />
                 </form>
                 <div ref={bottomRef} />
             </div>
+
+            {/* Bottom Glow */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-emerald-500/5 to-transparent pointer-events-none" />
         </div>
     );
 };
 
 export default Terminal;
+

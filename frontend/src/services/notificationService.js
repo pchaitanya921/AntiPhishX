@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 export const getNotifications = async () => {
     const response = await axios.get(`${API_URL}/notifications`, {
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
     });
     return response.data;
@@ -16,7 +16,7 @@ export const getNotifications = async () => {
 export const getUnreadCount = async () => {
     const response = await axios.get(`${API_URL}/notifications/unread`, {
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
     });
     return response.data;
@@ -29,7 +29,7 @@ export const markAsRead = async (notificationId) => {
         {},
         {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
             }
         }
     );
@@ -43,7 +43,7 @@ export const markAllAsRead = async () => {
         {},
         {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
             }
         }
     );
@@ -54,7 +54,7 @@ export const markAllAsRead = async () => {
 export const deleteNotification = async (notificationId) => {
     const response = await axios.delete(`${API_URL}/notifications/${notificationId}`, {
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
     });
     return response.data;
@@ -67,7 +67,7 @@ export const createNotification = async (notificationData) => {
         notificationData,
         {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
             }
         }
     );

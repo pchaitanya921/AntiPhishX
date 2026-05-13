@@ -30,7 +30,7 @@ const QREnvironment = ({ content, onComplete }) => {
             {/* Split Screen Layout */}
 
             {/* LEFT: Physical World (Flyer/Poster) */}
-            <div className={`flex-1 flex flex-col items-center justify-center p-8 transition-all duration-500 ${showPhone ? 'w-1/2 scale-90 opacity-50 blur-[1px]' : 'w-full'}`}>
+            <div className={`flex-1 flex flex-col items-center justify-center p-8 transition-all duration-500 ${showPhone ? 'w-1/2 scale-90 opacity-50 ' : 'w-full'}`}>
                 <div className="relative max-w-md w-full bg-white rounded-sm shadow-2xl p-4 transform rotate-1 hover:rotate-0 transition-transform duration-500">
                     {/* Simulated Flyer Content */}
                     <div className="border-4 border-dashed border-slate-300 p-4 flex flex-col items-center text-center space-y-4">
@@ -82,7 +82,7 @@ const QREnvironment = ({ content, onComplete }) => {
 
             {/* RIGHT: Mobile Device Overlay (Scrollable) */}
             <div className={`
-                fixed inset-y-0 right-0 w-[330px] bg-black/90 backdrop-blur-xl shadow-2xl border-l border-white/10
+                fixed inset-y-0 right-0 w-[330px] bg-black/90  shadow-2xl border-l border-white/10
                 transform transition-transform duration-500 z-50 flex flex-col items-center overflow-y-auto custom-scrollbar
                 ${showPhone ? 'translate-x-0' : 'translate-x-full'}
             `}>
@@ -237,3 +237,4 @@ const QREnvironment = ({ content, onComplete }) => {
 };
 
 export default QREnvironment;
+

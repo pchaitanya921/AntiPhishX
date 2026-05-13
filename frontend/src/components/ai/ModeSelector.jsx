@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, Beaker, Shield, GraduationCap } from 'lucide-react';
+import { ChevronDown, Beaker, Shield, GraduationCap, LifeBuoy } from 'lucide-react';
 
 /**
  * ModeSelector Component
@@ -29,6 +29,13 @@ const ModeSelector = ({ currentMode, onModeChange }) => {
             icon: GraduationCap,
             description: 'Lab generation (Admin)',
             color: 'from-green-500 to-emerald-500'
+        },
+        {
+            id: 'support',
+            name: 'Support AI',
+            icon: LifeBuoy,
+            description: 'Platform assistance',
+            color: 'from-blue-500 to-indigo-500'
         }
     ];
 
@@ -94,3 +101,4 @@ const ModeSelector = ({ currentMode, onModeChange }) => {
 };
 
 export default ModeSelector;
+

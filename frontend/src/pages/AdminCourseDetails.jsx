@@ -450,7 +450,7 @@ export default function AdminCourseDetails() {
                                     </div>
                                 </div>
                                 {activeLevel === level && (
-                                    <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-cyber-purple/20 to-transparent blur-xl" />
+                                    <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-cyber-purple/20 to-transparent " />
                                 )}
                             </button>
                         );
@@ -460,7 +460,7 @@ export default function AdminCourseDetails() {
                 {/* Video List */}
                 <div className="lg:col-span-3 space-y-6">
                     <Card className="p-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-purple/5 rounded-full blur-3xl -z-10" />
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-purple/5 rounded-full  -z-10" />
 
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-4">
@@ -627,7 +627,7 @@ export default function AdminCourseDetails() {
             <AnimatePresence>
                 {/* Edit Topic Modal */}
                 {isEditTopicOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-cyber-black/80 backdrop-blur-md">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-cyber-black/80 ">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -659,11 +659,14 @@ export default function AdminCourseDetails() {
                                         value={topicForm.category}
                                         onChange={(e) => setTopicForm({ ...topicForm, category: e.target.value })}
                                     >
-                                        <option value="phishing">Phishing</option>
-                                        <option value="smishing">Smishing</option>
-                                        <option value="vishing">Vishing</option>
-                                        <option value="qr">QR Code</option>
-                                        <option value="social_engineering">Social Engineering</option>
+                                        <option value="executive_intelligence">Executive Intelligence</option>
+                                        <option value="tactical_defense">Tactical Defense</option>
+                                        <option value="cognitive_security">Cognitive Security</option>
+                                        <option value="advanced_ai_adaptive">Advanced AI Adaptive</option>
+                                        <option value="phishing">Phishing (Legacy)</option>
+                                        <option value="smishing">Smishing (Legacy)</option>
+                                        <option value="vishing">Vishing (Legacy)</option>
+                                        <option value="social_engineering">Social Engineering (Legacy)</option>
                                     </select>
                                 </div>
                             </div>
@@ -679,7 +682,7 @@ export default function AdminCourseDetails() {
 
                 {/* Add/Edit Video Modal */}
                 {(isAddVideoOpen || isEditVideoOpen) && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-cyber-black/80 backdrop-blur-md">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-cyber-black/80 ">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -916,3 +919,4 @@ export default function AdminCourseDetails() {
         </div>
     );
 }
+

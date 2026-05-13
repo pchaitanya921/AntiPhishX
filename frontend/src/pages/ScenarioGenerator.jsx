@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Sparkles, Mail, Smartphone, Mic, Copy, CheckCircle, ChevronDown, Loader, AlertTriangle, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import PermissionWrapper from '../components/auth/PermissionWrapper';
+import { PERMISSIONS } from '../config/permissions';
+import { scenarioAPI } from '../services/api';
 
 const TYPE_OPTIONS = [
     { id: 'email', label: 'Email', icon: Mail, desc: 'Spear Phishing Email with headers' },
@@ -91,17 +94,11 @@ export default function ScenarioGenerator() {
         setError('');
         setResult(null);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch('/api/scenario/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ type, context, difficulty, target }),
-            });
-            const data = await res.json();
+            const data = await scenarioAPI.generate({ type, context, difficulty, target });
             if (!data.success) throw new Error(data.error || 'Generation failed');
             setResult(data.data);
         } catch (err) {
-            setError(err.message);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
         } finally {
             setLoading(false);
         }
@@ -133,7 +130,7 @@ export default function ScenarioGenerator() {
                     </p>
                     <div className={`inline-flex items-center gap-2 mt-3 px-3 py-1 rounded-full text-xs font-bold ${isLight ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}`}>
                         <AlertTriangle size={11} />
-                        For authorized educational use only — Admin / Instructor access
+                        Learner access is restricted to basic generation
                     </div>
                 </motion.div>
 
@@ -164,30 +161,34 @@ export default function ScenarioGenerator() {
                         </div>
 
                         {/* Difficulty */}
-                        <div className={`rounded-2xl border p-5 ${isLight ? 'bg-white/80 border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                            <p className={`text-xs font-black uppercase tracking-widest mb-3 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Difficulty</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {DIFFICULTY.map(d => (
-                                    <button key={d} onClick={() => setDifficulty(d)}
-                                        className={`py-2 rounded-xl text-xs font-black uppercase border transition-all ${difficulty === d
-                                            ? 'bg-cyber-cyan/10 border-cyber-cyan/40 text-cyber-cyan'
-                                            : isLight ? 'border-slate-100 text-slate-400' : 'border-white/5 text-white/30'
-                                            }`}>
-                                        {d}
-                                    </button>
-                                ))}
+                        <PermissionWrapper permission={PERMISSIONS.SAVE_AI_SCENARIO} fallbackMessage="Instructor Access Required">
+                            <div className={`rounded-2xl border p-5 ${isLight ? 'bg-white/80 border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
+                                <p className={`text-xs font-black uppercase tracking-widest mb-3 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Difficulty</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {DIFFICULTY.map(d => (
+                                        <button key={d} onClick={() => setDifficulty(d)}
+                                            className={`py-2 rounded-xl text-xs font-black uppercase border transition-all ${difficulty === d
+                                                ? 'bg-cyber-cyan/10 border-cyber-cyan/40 text-cyber-cyan'
+                                                : isLight ? 'border-slate-100 text-slate-400' : 'border-white/5 text-white/30'
+                                                }`}>
+                                            {d}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        </PermissionWrapper>
 
                         {/* Target */}
-                        <div className={`rounded-2xl border p-5 ${isLight ? 'bg-white/80 border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                            <p className={`text-xs font-black uppercase tracking-widest mb-3 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Target Role</p>
-                            <select value={target} onChange={e => setTarget(e.target.value)}
-                                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none border ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white'
-                                    }`}>
-                                {TARGET_PRESETS.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                        </div>
+                        <PermissionWrapper permission={PERMISSIONS.SAVE_AI_SCENARIO} fallbackMessage="Instructor Access Required">
+                            <div className={`rounded-2xl border p-5 ${isLight ? 'bg-white/80 border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
+                                <p className={`text-xs font-black uppercase tracking-widest mb-3 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Target Role</p>
+                                <select value={target} onChange={e => setTarget(e.target.value)}
+                                    className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none border ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white'
+                                        }`}>
+                                    {TARGET_PRESETS.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                            </div>
+                        </PermissionWrapper>
                     </div>
 
                     {/* Input + Output */}
@@ -296,3 +297,4 @@ export default function ScenarioGenerator() {
         </div>
     );
 }
+

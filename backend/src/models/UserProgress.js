@@ -41,6 +41,20 @@ const userProgressSchema = new mongoose.Schema({
     lastAttemptAt: {
         type: Date,
         default: Date.now
+    },
+    stars: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 3
+    },
+    telemetry: {
+        urgencySusceptibility: { type: Number, default: 0 },
+        authoritySusceptibility: { type: Number, default: 0 },
+        curiositySusceptibility: { type: Number, default: 0 },
+        hesitationPatterns: [{ type: Number }],
+        reportingAction: { type: Boolean, default: false },
+        escalationDecision: { type: String }
     }
 });
 

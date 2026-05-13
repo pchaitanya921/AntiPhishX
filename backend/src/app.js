@@ -9,6 +9,7 @@ const hpp = require('hpp');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const path = require('path');
+const crypto = require('crypto');
 
 // Initialize express app
 const app = express();
@@ -16,27 +17,53 @@ const app = express();
 // Set static folder for uploads - Consolidated to single path
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// Enable CORS — explicit allowlist (no wildcard with credentials)
+// Enable CORS — strict production allowlist
 const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5174',
-    process.env.FRONTEND_URL
+    process.env.FRONTEND_URL,
+    process.env.FRONTEND_URL_ALT, // Support for alternate domains/preview urls
 ].filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (e.g., mobile apps, curl)
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps or curl) in dev
+        if (!origin && process.env.NODE_ENV === 'development') return callback(null, true);
+        
+        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(ao => origin.startsWith(ao))) {
             return callback(null, true);
         }
         callback(new Error(`CORS: Origin '${origin}' not allowed`));
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-device-id', 'X-Correlation-ID']
 }));
 
 // Set security HTTP headers
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://checkout.razorpay.com", "https://api.razorpay.com", "*.razorpay.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "ws://localhost:3000", "ws://localhost:5000", "ws://127.0.0.1:3000", "ws://127.0.0.1:5000", "http://localhost:5000", "http://127.0.0.1:5000", "https://api.groq.com", "https://api.resend.com", "https://api.razorpay.com", "*.razorpay.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com", "*.razorpay.com"],
+        },
+    },
+}));
+
+// Correlation ID for Observability
+app.use((req, res, next) => {
+    req.id = crypto.randomUUID();
+    res.setHeader('X-Correlation-ID', req.id);
+    next();
+});
 
 // Development request logging only
 if (process.env.NODE_ENV === 'development') {
@@ -61,6 +88,14 @@ const limiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     message: 'Too many requests from this IP, please try again in an hour!'
 });
+
+// Apply rate limiting to Auth and SCIM endpoints
+app.use('/api/auth', limiter);
+app.use('/api/scim/v2', rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 100,
+    message: 'SCIM rate limit exceeded'
+}));
 app.use('/api', limiter);
 app.use(cookieParser());
 
@@ -75,6 +110,23 @@ app.use(hpp());
 
 // Compression
 app.use(compression());
+
+const { protect } = require('./middleware/auth.middleware');
+const { deviceEnforcement } = require('./middleware/device.middleware');
+
+// Apply Global Auth Context & Device Tracking to Protected Routes
+app.use('/api', (req, res, next) => {
+    // Certain routes are public (login, register, etc.)
+    const publicRoutes = ['/auth/login', '/auth/register', '/auth/reset-password', '/auth/sso/status', '/auth/sso/login', '/auth/sso/callback', '/auth/refresh'];
+    const isPublic = publicRoutes.some(route => req.path.startsWith(route));
+    
+    if (isPublic) return next();
+    
+    // For all other routes, enforce protection and device limits
+    return protect(req, res, () => {
+        deviceEnforcement(req, res, next);
+    });
+});
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
@@ -91,22 +143,39 @@ const phishingRoutes = require('./routes/phishing.routes');
 const scenarioRoutes = require('./routes/scenario.routes');
 const quizRoutes = require('./routes/quiz.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const campaignRoutes = require('./routes/campaign.routes');
+const demoRoutes = require('./routes/demo.routes');
+const scimRoutes = require('./routes/scim.routes');
+const briefingRoutes = require('./routes/briefing.routes');
+const certificateRoutes = require('./routes/certificate.routes');
+const progressRoutes = require('./routes/progress.routes');
+const subscriptionRoutes = require('./routes/subscription.routes');
+const paymentRoutes = require('./routes/payment.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/labs', labRoutes);
+app.use('/api/quizzes', quizRoutes);
+app.use('/api/instructor', instructorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/courses', courseRoutes);
-app.use('/api/instructor', instructorRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/phishing', phishingRoutes);
 app.use('/api/scenario', scenarioRoutes);
-app.use('/api/quizzes', quizRoutes);
 app.use('/api/notifications', notificationRoutes);
-
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/demo', demoRoutes);
+app.use('/api/scim/v2', scimRoutes);
+app.use('/api/briefing', briefingRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/enterprise', require('./routes/enterprise.routes'));
+app.use('/api/admin-insights', require('./routes/adminInsight.routes'));
+app.use('/api/progress', progressRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -140,7 +209,7 @@ app.use((err, req, res, next) => {
     // Production: safe response only
     res.status(statusCode).json({
         status,
-        message: err.isOperational ? err.message : 'An unexpected error occurred. Please try again later.'
+        message: process.env.NODE_ENV === 'development' ? err.message : (err.isOperational ? err.message : 'An unexpected error occurred. Please try again later.')
     });
 });
 

@@ -130,12 +130,12 @@ export default function UserManagement() {
             {/* Filters - Premium Design */}
             <Card className="p-8 relative overflow-hidden">
                 {/* Background glow effect */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-purple/5 rounded-full blur-3xl -z-10" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-purple/5 rounded-full  -z-10" />
 
                 <div className="flex flex-col lg:flex-row gap-6">
                     {/* Search Bar - Enhanced Design */}
                     <div className="flex-1 relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyber-purple/20 to-cyber-cyan/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyber-purple/20 to-cyber-cyan/20 rounded-2xl  opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <div className="relative">
                             <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-cyber-purple group-hover:text-cyber-cyan transition-colors duration-300" />
                             <input
@@ -372,3 +372,4 @@ export default function UserManagement() {
         </div>
     );
 }
+

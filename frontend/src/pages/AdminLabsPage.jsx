@@ -18,13 +18,10 @@ import api from '../services/api';
 
 const TOPICS = [
     { id: 'all', name: 'All Topics' },
-    { id: 'phishing', name: 'Phishing' },
-    { id: 'vishing', name: 'Vishing' },
-    { id: 'smishing', name: 'Smishing' },
-    { id: 'qr_code', name: 'QR/Quishing' },
-    { id: 'social_engineering', name: 'Social Engineering' },
-    { id: 'advanced_threats', name: 'Advanced Threats' },
-    { id: 'malware_detection', name: 'Malware' }
+    { id: 'executive_intelligence', name: 'Executive Intelligence' },
+    { id: 'tactical_defense', name: 'Tactical Defense' },
+    { id: 'cognitive_security', name: 'Cognitive Security' },
+    { id: 'advanced_ai_adaptive', name: 'AI Adaptive Threats' }
 ];
 
 export default function AdminLabsPage() {
@@ -147,13 +144,10 @@ export default function AdminLabsPage() {
 function LabListItem({ lab, onDelete, onEdit }) {
     const getTopicColor = (topic) => {
         const colors = {
-            phishing: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
-            vishing: 'text-green-400 bg-green-400/10 border-green-400/20',
-            smishing: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
-            qr_code: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
-            social_engineering: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
-            advanced_threats: 'text-red-400 bg-red-400/10 border-red-400/20',
-            malware_detection: 'text-orange-400 bg-orange-400/10 border-orange-400/20'
+            executive_intelligence: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+            tactical_defense: 'text-lime-400 bg-lime-400/10 border-lime-400/20',
+            cognitive_security: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
+            advanced_ai_adaptive: 'text-purple-400 bg-purple-400/10 border-purple-400/20'
         };
         return colors[lab.topic] || 'text-white bg-white/10 border-white/20';
     };
@@ -213,3 +207,4 @@ function LabListItem({ lab, onDelete, onEdit }) {
         </div>
     );
 }
+

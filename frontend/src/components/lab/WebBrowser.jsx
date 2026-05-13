@@ -145,3 +145,4 @@ const WebBrowser = ({ content }) => {
 };
 
 export default WebBrowser;
+

@@ -118,14 +118,14 @@ function EnrollmentCard({ course, onClick }) {
 
                 {/* Level Badge */}
                 <div className="absolute top-4 left-4">
-                    <Badge variant="cyan" className="bg-black/60 backdrop-blur-md">
+                    <Badge variant="cyan" className="bg-black/60 ">
                         {course.level}
                     </Badge>
                 </div>
 
                 {/* Status Overlay */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="p-4 rounded-full bg-cyber-cyan/20 backdrop-blur-md border border-cyber-cyan/40">
+                    <div className="p-4 rounded-full bg-cyber-cyan/20  border border-cyber-cyan/40">
                         <Play size={24} className="text-cyber-cyan fill-cyber-cyan" />
                     </div>
                 </div>
@@ -192,3 +192,4 @@ function EnrollmentCard({ course, onClick }) {
         </Card>
     );
 }
+

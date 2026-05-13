@@ -189,7 +189,7 @@ export default function QuizResultPage() {
                 <Button
                     variant="outline"
                     className="flex-1 h-14 gap-3 text-sm font-black uppercase tracking-widest"
-                    onClick={() => navigate(`/quizzes/${quiz.id}`)}
+                    onClick={() => navigate(`/quizzes/${quiz._id}`)}
                 >
                     <RotateCcw size={16} /> Retry Quiz
                 </Button>
@@ -205,3 +205,4 @@ export default function QuizResultPage() {
         </div>
     );
 }
+

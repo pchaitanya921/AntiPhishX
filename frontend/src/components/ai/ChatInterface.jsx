@@ -1,6 +1,7 @@
+// AI Node Synchronization: Active
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, AlertTriangle, Menu, X } from 'lucide-react';
+import { Wand2, AlertTriangle, Menu, X } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import ModeSelector from './ModeSelector';
@@ -19,6 +20,7 @@ const ChatInterface = ({ initialMode = 'cyber', labContext = null, isCompact = f
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(!isCompact);
+    const [behavior, setBehavior] = useState(null);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -52,13 +54,30 @@ const ChatInterface = ({ initialMode = 'cyber', labContext = null, isCompact = f
         }
     };
 
+    useEffect(() => {
+        const fetchBehavior = async () => {
+            const data = await aiService.getBehavior();
+            setBehavior(data);
+        };
+        fetchBehavior();
+    }, []);
+
     const handleNewChat = () => {
+        const primaryVulnerability = behavior ? 
+            Object.entries(behavior.cognitiveVulnerabilityMap || {})
+                .sort((a,b) => b[1] - a[1])[0] : null;
+
+        const behaviorInsight = primaryVulnerability && primaryVulnerability[1] > 60 
+            ? ` I've noticed you might be slightly more susceptible to **${primaryVulnerability[0]}** tactics in our simulations. Should we focus on strengthening your defenses there today?`
+            : '';
+
         const welcomeMessages = {
             lab: labContext
                 ? `Hello! I see you're working on the "${labContext.topic}" lab (Level: ${labContext.level}). I'm here to help you analyze indicators without giving away the answer. What are you looking at right now?`
                 : 'Hello! I\'m your Lab Assistant. I\'ll guide you through this lab using questions and hints. Let\'s analyze the indicators together!',
-            cyber: 'Hi! I\'m your Cyber Security mentor. Ask me anything about phishing, malware, SOC operations, or defensive security.',
-            instructor: 'Welcome, Administrator. I can help you generate labs, create scenarios, and analyze content. What would you like to create?'
+            cyber: `Hi! I'm your Cyber Security mentor.${behaviorInsight} Ask me anything about phishing, malware, SOC operations, or defensive security.`,
+            instructor: 'Welcome, Administrator. I can help you generate labs, create scenarios, and analyze content. What would you like to create?',
+            support: `AntiPhishX Support AI Active. I've synchronized with your neural profile. How can I assist with your subscriptions, labs, or account settings today?`
         };
 
         setMessages([{
@@ -193,7 +212,7 @@ const ChatInterface = ({ initialMode = 'cyber', labContext = null, isCompact = f
                 <div className={`p-4 border-b border-white/10 ${isCompact ? 'py-3' : 'py-6 bg-white/[0.02]'}`}>
                     <div className={`${isCompact ? 'max-w-4xl' : 'max-w-6xl'} mx-auto flex flex-col md:flex-row md:items-center gap-4 ${isCompact ? 'gap-2' : ''}`}>
                         <div className="flex items-center gap-3">
-                            <Sparkles size={isCompact ? 16 : 24} className="text-cyber-cyan" />
+                            <Wand2 size={isCompact ? 16 : 24} className="text-cyber-cyan" />
                             <h2 className={`${isCompact ? 'text-sm' : 'text-2xl'} font-black text-white italic uppercase tracking-tighter`}>AI COPILOT</h2>
                         </div>
                         {/* Mode Selector (Hidden in Compact Mode to prevent mode switching within labs) */}
@@ -205,6 +224,12 @@ const ChatInterface = ({ initialMode = 'cyber', labContext = null, isCompact = f
                         {isCompact && (
                             <div className="text-[10px] font-black text-cyber-cyan/60 uppercase tracking-widest ml-auto">
                                 Lab Assistant Active
+                            </div>
+                        )}
+                        {!isCompact && behavior && (
+                            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase text-emerald-400 animate-pulse">
+                                <AlertTriangle size={10} />
+                                Behavioral Intelligence Active
                             </div>
                         )}
                     </div>
@@ -230,7 +255,7 @@ const ChatInterface = ({ initialMode = 'cyber', labContext = null, isCompact = f
                                 className="flex gap-4 mb-6"
                             >
                                 <div className={`w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center ${isCompact ? 'w-6 h-6' : ''}`}>
-                                    <Sparkles size={isCompact ? 12 : 16} className="text-cyber-cyan animate-pulse" />
+                                    <Wand2 size={isCompact ? 12 : 16} className="text-cyber-cyan animate-pulse" />
                                 </div>
                                 <div className={`flex gap-2 items-center px-4 py-3 bg-white/5 border border-white/10 rounded-2xl ${isCompact ? 'py-2 px-3' : ''}`}>
                                     <div className="w-1.5 h-1.5 rounded-full bg-cyber-cyan animate-bounce" />
@@ -270,3 +295,4 @@ const ChatInterface = ({ initialMode = 'cyber', labContext = null, isCompact = f
 };
 
 export default ChatInterface;
+

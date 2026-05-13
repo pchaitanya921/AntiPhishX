@@ -14,26 +14,63 @@ const TOPICS = [
     { id: 'malware_detection', name: 'Malware Detection' }
 ];
 
-const SAMPLE_LEADERBOARD = [
-    { user: 'u1', rank: 1, username: 'Priya Sharma', totalPoints: 9840, labsCompleted: 47, achievementsUnlocked: 12, achievementPoints: 2400, accuracy: 97.2, averageTime: 78, averageScore: 97.2, topicPoints: 1840, topicCompleted: 12, topicAccuracy: 97.2 },
-    { user: 'u2', rank: 2, username: 'Arjun Mehta', totalPoints: 8920, labsCompleted: 43, achievementsUnlocked: 10, achievementPoints: 2100, accuracy: 95.1, averageTime: 84, averageScore: 95.1, topicPoints: 1720, topicCompleted: 11, topicAccuracy: 95.1 },
-    { user: 'u3', rank: 3, username: 'Deepika Rao', totalPoints: 8350, labsCompleted: 39, achievementsUnlocked: 9, achievementPoints: 1900, accuracy: 93.8, averageTime: 91, averageScore: 93.8, topicPoints: 1600, topicCompleted: 10, topicAccuracy: 93.8 },
-    { user: 'u4', rank: 4, username: 'Vikram Bose', totalPoints: 7740, labsCompleted: 36, achievementsUnlocked: 8, achievementPoints: 1700, accuracy: 91.4, averageTime: 99, averageScore: 91.4, topicPoints: 1480, topicCompleted: 9, topicAccuracy: 91.4 },
-    { user: 'u5', rank: 5, username: 'Meera Iyer', totalPoints: 7120, labsCompleted: 33, achievementsUnlocked: 7, achievementPoints: 1500, accuracy: 89.7, averageTime: 105, averageScore: 89.7, topicPoints: 1340, topicCompleted: 8, topicAccuracy: 89.7 },
-    { user: 'u6', rank: 6, username: 'Sanjay Gupta', totalPoints: 6580, labsCompleted: 30, achievementsUnlocked: 6, achievementPoints: 1300, accuracy: 87.3, averageTime: 112, averageScore: 87.3, topicPoints: 1220, topicCompleted: 8, topicAccuracy: 87.3 },
-    { user: 'u7', rank: 7, username: 'Pooja Nair', totalPoints: 5940, labsCompleted: 27, achievementsUnlocked: 5, achievementPoints: 1100, accuracy: 85.0, averageTime: 118, averageScore: 85.0, topicPoints: 1100, topicCompleted: 7, topicAccuracy: 85.0 },
-    { user: 'u8', rank: 8, username: 'Raj Kumar', totalPoints: 5310, labsCompleted: 24, achievementsUnlocked: 4, achievementPoints: 900, accuracy: 82.6, averageTime: 127, averageScore: 82.6, topicPoints: 980, topicCompleted: 6, topicAccuracy: 82.6 },
-    { user: 'u9', rank: 9, username: 'P.Lakshmi Sai', totalPoints: 4780, labsCompleted: 21, achievementsUnlocked: 4, achievementPoints: 800, accuracy: 80.1, averageTime: 134, averageScore: 80.1, topicPoints: 860, topicCompleted: 5, topicAccuracy: 80.1 },
-    { user: 'u10', rank: 10, username: 'Venkata Jeshwanth', totalPoints: 4210, labsCompleted: 18, achievementsUnlocked: 3, achievementPoints: 650, accuracy: 78.5, averageTime: 142, averageScore: 78.5, topicPoints: 740, topicCompleted: 5, topicAccuracy: 78.5 },
-];
+
 
 export default function LeaderboardPage() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('overall');
     const [selectedTopic, setSelectedTopic] = useState('phishing');
-    const [leaderboard] = useState(SAMPLE_LEADERBOARD);
-    const [userRank] = useState(9); // P.Lakshmi Sai at rank 9
-    const [loading] = useState(false);
+    const [leaderboard, setLeaderboard] = useState([]);
+    const [userRank, setUserRank] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchLeaderboard = async () => {
+            try {
+                setLoading(true);
+                const res = await api.get('/leaderboard');
+                const users = res.data.data || [];
+
+                // Map to the shape the table expects
+                const mapped = users.map((u, idx) => ({
+                    user: u._id,
+                    rank: idx + 1,
+                    username: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || 'Learner',
+                    totalPoints: u.points || 0,
+                    labsCompleted: u.labsCompleted || 0,
+                    achievementsUnlocked: u.achievementsUnlocked || 0,
+                    achievementPoints: u.achievementPoints || 0,
+                    accuracy: u.accuracy || 0,
+                    averageTime: u.averageTime || 0,
+                    averageScore: u.averageScore || 0,
+                    topicPoints: u.points || 0,
+                    topicCompleted: u.labsCompleted || 0,
+                    topicAccuracy: u.accuracy || 0,
+                    level: u.level || 'beginner',
+                    avatar: u.avatar || null,
+                }));
+                setLeaderboard(mapped);
+            } catch (err) {
+                console.error('Leaderboard fetch failed:', err);
+                setError('Could not load leaderboard data.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const fetchMyRank = async () => {
+            try {
+                const res = await api.get('/leaderboard/my-rank');
+                setUserRank(res.data.data?.rank || null);
+            } catch {
+                // Not critical — silently ignore
+            }
+        };
+
+        fetchLeaderboard();
+        fetchMyRank();
+    }, []);
 
     const getRankBadge = (rank) => {
         if (rank === 1) return { icon: '🥇', color: 'from-yellow-400 to-yellow-600', text: '1st' };
@@ -60,8 +97,17 @@ export default function LeaderboardPage() {
     if (loading) {
         return (
             <div className="flex justify-center py-20">
-                <div className="w-12 h-12 border-4 border-cyber-cyan border-t-transparent rounded-full animate-spin" />
+                <div className="space-y-4 text-center">
+                    <div className="w-12 h-12 border-4 border-cyber-cyan/30 border-t-cyber-cyan rounded-full animate-spin mx-auto" />
+                    <p className="text-white/40 text-xs font-black uppercase tracking-[0.3em]">Loading Leaderboard...</p>
+                </div>
             </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex justify-center py-20 text-red-400 font-bold">{error}</div>
         );
     }
 
@@ -308,3 +354,4 @@ export default function LeaderboardPage() {
         </div>
     );
 }
+

@@ -37,3 +37,4 @@ const LanguageSelector = ({ languages, activeVideo, activeLang, setActiveLang })
 };
 
 export default LanguageSelector;
+

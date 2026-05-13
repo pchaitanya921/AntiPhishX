@@ -4,15 +4,29 @@ const certificateSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
-        index: true
-    },
-    course: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Course',
         required: true
     },
-    credentialId: {
+    domain: {
+        type: String,
+        required: true,
+        enum: [
+            'executive_intelligence',
+            'tactical_defense',
+            'cognitive_security',
+            'advanced_ai_adaptive'
+        ]
+    },
+    level: {
+        type: String,
+        required: true,
+        enum: ['beginner', 'intermediate', 'advanced']
+    },
+    certificateId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    verificationToken: {
         type: String,
         required: true,
         unique: true
@@ -21,15 +35,27 @@ const certificateSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    score: {
-        type: Number,
-        required: true
+    expiryDate: {
+        type: Date
     },
-    verificationUrl: {
-        type: String
+    metadata: {
+        score: Number,
+        resilienceScore: Number,
+        labsCompleted: Number,
+        avgDetectionSpeed: Number,
+        neutralizationAccuracy: Number
+    },
+    pdfUrl: String,
+    status: {
+        type: String,
+        enum: ['active', 'revoked'],
+        default: 'active'
     }
 }, {
     timestamps: true
 });
+
+// Index for faster lookups
+certificateSchema.index({ user: 1, domain: 1, level: 1 });
 
 module.exports = mongoose.model('Certificate', certificateSchema);

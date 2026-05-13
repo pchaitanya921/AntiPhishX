@@ -64,3 +64,4 @@ const ChatInput = ({ onSend, isLoading, disabled }) => {
 };
 
 export default ChatInput;
+

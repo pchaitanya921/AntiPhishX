@@ -141,9 +141,25 @@ const EmailClient = ({ content }) => {
                         </div>
                     </div>
 
-                    {/* Email Body */}
                     <div className="prose prose-sm max-w-none text-slate-800 leading-relaxed whitespace-pre-wrap font-sans">
-                        {email?.body || 'No content'}
+                        {email?.body?.split('Click here').map((part, i, arr) => (
+                            <React.Fragment key={i}>
+                                {part}
+                                {i < arr.length - 1 && (
+                                    <span 
+                                        className="text-blue-600 underline cursor-pointer hover:text-blue-800"
+                                        onClick={() => {
+                                            window.dispatchEvent(new CustomEvent('labTelemetryUpdate', {
+                                                detail: { curiositySusceptibility: 1 }
+                                            }));
+                                            alert("Simulated redirection... Analyze the link in your manual.");
+                                        }}
+                                    >
+                                        Click here
+                                    </span>
+                                )}
+                            </React.Fragment>
+                        )) || 'No content'}
                     </div>
 
                     {/* Attachments (Mock) */}
@@ -170,3 +186,4 @@ const EmailClient = ({ content }) => {
 };
 
 export default EmailClient;
+

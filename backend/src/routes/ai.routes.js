@@ -78,4 +78,11 @@ router.put('/profile', aiController.updateCyberProfile);
  */
 router.post('/risk/violation', aiController.recordViolation);
 
+/**
+ * @route   POST /api/ai/adaptive/generate
+ * @desc    Generate adaptive lab challenge
+ * @access  Private
+ */
+router.post('/adaptive/generate', aiController.generateAdaptiveChallenge);
+
 module.exports = router;

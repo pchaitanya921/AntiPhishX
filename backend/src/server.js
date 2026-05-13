@@ -24,6 +24,16 @@ const server = app.listen(port, () => {
     console.log(`🚀 Server running on port ${port}`);
     console.log(`⭐️ Environment: ${process.env.NODE_ENV}`);
 
+    // Initialize Socket.io within the server lifecycle
+    const { initSocket } = require('./config/socket');
+    initSocket(server);
+    console.log('✅ Real-time Socket Engine: ACTIVE');
+
+    // Start Background Workers
+    require('./workers/campaign.worker');
+    require('./workers/audit.worker');
+    require('./workers/email.worker');
+
     // Masked log for critical env vars
     const mask = (val) => val ? `${val.substring(0, 4)}...${val.substring(val.length - 4)}` : 'MISSING';
     console.log('📡 Connectivity Matrix:');
@@ -31,6 +41,8 @@ const server = app.listen(port, () => {
     console.log(`   - Supabase: ${process.env.SUPABASE_URL || 'UNDEFINED'}`);
     console.log(`   - JWT Secret: ${mask(process.env.JWT_SECRET)}`);
     console.log(`   - Groq API: ${mask(process.env.GROQ_API_KEY)}`);
+    console.log(`   - Razorpay: ID=${mask(process.env.RAZORPAY_KEY_ID)}, SECRET=${mask(process.env.RAZORPAY_KEY_SECRET)}`);
+    console.log(`   - Workers: ACTIVE (Campaign, Audit)`);
 });
 
 // Handle unhandled rejections

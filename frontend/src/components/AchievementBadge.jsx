@@ -111,3 +111,4 @@ export default function AchievementBadge({ achievement, unlocked, progress, size
         </div>
     );
 }
+

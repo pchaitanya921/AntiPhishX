@@ -27,10 +27,10 @@ exports.chat = async (req, res) => {
         }
 
         // Validate mode
-        if (!['lab', 'cyber', 'instructor'].includes(mode)) {
+        if (!['lab', 'cyber', 'instructor', 'support'].includes(mode)) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid mode. Must be: lab, cyber, or instructor'
+                error: 'Invalid mode. Must be: lab, cyber, instructor, or support'
             });
         }
 
@@ -86,10 +86,59 @@ exports.chat = async (req, res) => {
         // Get user profile for cyber mode
         let userProfile = null;
         if (mode === 'cyber') {
+            const UserBehavior = require('../models/UserBehavior');
+            const behavior = await UserBehavior.findOne({ user: userId });
+            if (behavior) {
+                context.behaviorMap = behavior.cognitiveVulnerabilityMap;
+            }
+            
             userProfile = await CyberUserProfile.findOne({ user: userId });
             if (userProfile) {
                 context.skillLevel = userProfile.skillLevel;
             }
+        }
+
+        // --- NEW: Context Injection for Support Mode ---
+        if (mode === 'support') {
+            const User = require('../models/User');
+            const UserProgress = require('../models/UserProgress');
+            const Certificate = require('../models/Certificate');
+            const Organization = require('../models/Organization');
+
+            // 1. Get Full User with Org
+            const user = await User.findById(userId).populate('organization');
+            context.user = {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                currentPlan: user.currentPlan,
+                billingCycle: user.billingCycle,
+                subscriptionStatus: user.subscriptionStatus,
+                planExpiresAt: user.planExpiresAt
+            };
+            if (user.organization) {
+                context.organization = {
+                    name: user.organization.name,
+                    plan: user.organization.plan
+                };
+            }
+
+            // 2. Get Progress Summary
+            const progress = await UserProgress.find({ user: userId });
+            const completedLabs = progress.filter(p => p.completed);
+            context.progress = {
+                completedCount: completedLabs.length,
+                totalAttempted: progress.length,
+                lastLab: progress.length > 0 ? progress.sort((a,b) => b.updatedAt - a.updatedAt)[0].lab : null
+            };
+
+            // 3. Get Certificates
+            const certs = await Certificate.find({ user: userId });
+            context.certificates = certs.map(c => ({
+                domain: c.domain,
+                level: c.level,
+                issueDate: c.issueDate
+            }));
         }
 
         // Generate AI response
@@ -387,6 +436,39 @@ exports.recordViolation = async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to record violation'
+        });
+    }
+};
+/**
+ * @route   POST /api/ai/adaptive/generate
+ * @desc    Generate an adaptive lab challenge based on user HRI profile
+ * @access  Private
+ */
+exports.generateAdaptiveChallenge = async (req, res) => {
+    try {
+        const { domain = 'General Enterprise' } = req.body;
+        const User = require('../models/User');
+        
+        const user = await User.findById(req.user.id || req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const hriProfile = user.behavioralProfile;
+        
+        // Generate the lab content via LLM
+        const labContent = await llmService.generateAdaptiveLab(hriProfile, domain);
+
+        res.json({
+            success: true,
+            data: labContent
+        });
+    } catch (error) {
+        console.error('Adaptive Generation Error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate adaptive AI challenge',
+            message: error.message
         });
     }
 };

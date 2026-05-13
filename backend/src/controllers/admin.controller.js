@@ -1,9 +1,12 @@
 const User = require('../models/User');
 const Lab = require('../models/Lab');
-const SecurityLog = require('../models/SecurityLog');
+const AuditLog = require('../models/AuditLog');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const Certificate = require('../models/Certificate');
+const UserAchievement = require('../models/UserAchievement');
+const UserBadge = require('../models/UserBadge');
+const Quiz = require('../models/Quiz');
 
 // @desc    Get Admin Dashboard Stats
 // @route   GET /api/admin/dashboard
@@ -18,21 +21,26 @@ exports.getDashboard = async (req, res, next) => {
         const totalEnrollments = await Enrollment.countDocuments(); // Actual course enrollments
         const totalCertificates = await Certificate.countDocuments();
         const totalCourses = await Course.countDocuments();
+        const totalQuizzes = await Quiz.countDocuments();
 
-        // Get Recent Activity (from SecurityLog)
-        const recentActivity = await SecurityLog.find()
+        // Get Recent Activity (from AuditLog)
+        const recentActivity = await AuditLog.find()
             .sort({ timestamp: -1 })
             .limit(10)
             .populate('user', 'firstName lastName email');
 
+        // Get Recent Content
+        const recentLabs = await Lab.find().sort({ createdAt: -1 }).limit(5).select('title topic level points status');
+        const recentQuizzes = await Quiz.find().sort({ createdAt: -1 }).limit(5).select('title category difficulty xp status');
+
         // Transform activity to match frontend expectations
         const formattedActivity = recentActivity.map(item => ({
             _id: item._id,
-            action: item.action.replace('_', ' '), // "LOGIN SUCCESS"
-            resource: item.resource || item.details?.reason || item.action,
+            action: item.eventType.replace(/_/g, ' '), // "USER LOGIN"
+            resource: item.details?.resource || item.details?.email || item.eventType,
             timestamp: item.timestamp,
             userId: item.user,
-            severity: item.severity
+            severity: item.severity.toLowerCase()
         }));
 
         res.status(200).json({
@@ -42,10 +50,13 @@ exports.getDashboard = async (req, res, next) => {
                     totalUsers,
                     totalCourses,
                     totalLabs,
+                    totalQuizzes,
                     totalEnrollments,
                     totalCertificates
                 },
-                recentActivity: formattedActivity
+                recentActivity: formattedActivity,
+                recentLabs,
+                recentQuizzes
             }
         });
     } catch (err) {
@@ -161,6 +172,7 @@ exports.getPlatformAnalytics = async (req, res, next) => {
         const totalLabs = await Lab.countDocuments();
         const totalEnrollments = await UserProgress.countDocuments();
         const totalCertificates = await Certificate.countDocuments();
+        const totalQuizzes = await Quiz.countDocuments();
 
         // Chart Data: Users by Role
         const usersByRole = await User.aggregate([
@@ -180,6 +192,7 @@ exports.getPlatformAnalytics = async (req, res, next) => {
                     totalUsers,
                     totalCourses: totalLabs,
                     totalEnrollments,
+                    totalQuizzes,
                     totalCertificates,
                     averageEnrollmentsPerCourse: totalLabs > 0 ? (totalEnrollments / totalLabs) : 0
                 },
@@ -200,9 +213,16 @@ exports.getPlatformAnalytics = async (req, res, next) => {
 
 // @desc    Get Security Logs
 // @route   GET /api/admin/security/logs
-// @access  Private/Admin
+// @access  Private (Admin/Learner)
 exports.getSecurityLogs = async (req, res, next) => {
-    const logs = await SecurityLog.find(req.query)
+    let query = { ...req.query };
+    
+    // If not admin, restrict to their own logs
+    if (req.user.role !== 'admin') {
+        query.user = req.user.id;
+    }
+
+    const logs = await AuditLog.find(query)
         .populate('user', 'firstName lastName email')
         .sort({ timestamp: -1 })
         .limit(100);
@@ -225,10 +245,10 @@ const getTrafficStats = async () => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const traffic = await SecurityLog.aggregate([
+    const traffic = await AuditLog.aggregate([
         {
             $match: {
-                action: 'LOGIN_SUCCESS',
+                eventType: 'USER_LOGIN',
                 timestamp: { $gte: sevenDaysAgo }
             }
         },
@@ -419,6 +439,103 @@ exports.deleteUser = async (req, res, next) => {
             success: false,
             message: 'Server Error'
         });
+    }
+};
+
+// @desc    Get All Certificates (Platform-wide, Admin)
+// @route   GET /api/admin/certificates
+// @access  Private/Admin
+exports.getAllCertificates = async (req, res, next) => {
+    try {
+        const certificates = await Certificate.find()
+            .populate('user', 'firstName lastName email')
+            .populate('course', 'title')
+            .sort({ issueDate: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: certificates.length,
+            data: certificates
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Get All User Achievements (Platform-wide, Admin)
+// @route   GET /api/admin/achievements
+// @access  Private/Admin
+exports.getAllUserAchievements = async (req, res, next) => {
+    try {
+        const userAchievements = await UserAchievement.find()
+            .populate('user', 'firstName lastName email')
+            .populate('achievement')
+            .sort({ unlockedAt: -1 });
+
+        // Normalise: when the Achievement document is missing, generate a readable fallback
+        const data = userAchievements.map((ua, idx) => {
+            const achievementRef = ua.achievement;
+            return {
+                _id: ua._id,
+                user: ua.user,
+                earnedAt: ua.unlockedAt || ua.createdAt,
+                achievement: achievementRef
+                    ? achievementRef
+                    : {
+                          name: `Achievement #${idx + 1}`,
+                          description: 'Achievement earned on the platform',
+                          type: 'milestone',
+                          points: 0,
+                          icon: 'trophy'
+                      }
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            count: data.length,
+            data
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Get All User Badges (Platform-wide, Admin)
+// @route   GET /api/admin/badges
+// @access  Private/Admin
+exports.getAllUserBadges = async (req, res, next) => {
+    try {
+        const userBadges = await UserBadge.find()
+            .populate('user', 'firstName lastName email')
+            .populate('badge')
+            .sort({ unlockedAt: -1 });
+
+        const data = userBadges.map((ub, idx) => ({
+            _id: ub._id,
+            user: ub.user,
+            earnedAt: ub.unlockedAt || ub.createdAt,
+            badge: ub.badge
+                ? ub.badge
+                : {
+                      name: `Badge #${idx + 1}`,
+                      description: 'Badge earned on the platform',
+                      type: 'technical',
+                      points: 0,
+                      icon: 'medal'
+                  }
+        }));
+
+        res.status(200).json({
+            success: true,
+            count: data.length,
+            data
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
 

@@ -244,7 +244,7 @@ const MobileDevice = ({ content, level, onComplete }) => {
 
             {/* Right: Live Transcript (Desktop Only) */}
             {type === 'call' && callStatus === 'connected' && (
-                <div className="hidden lg:flex flex-col w-[300px] xl:w-[350px] h-[600px] bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 overflow-hidden shadow-2xl animate-fade-in-right self-center">
+                <div className="hidden lg:flex flex-col w-[300px] xl:w-[350px] h-[600px] bg-slate-900/40  rounded-2xl border border-white/5 overflow-hidden shadow-2xl animate-fade-in-right self-center">
                     <div className="p-4 border-b border-white/5 bg-slate-900/60 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -271,7 +271,7 @@ const MobileDevice = ({ content, level, onComplete }) => {
                                             </span>
                                             <span className="text-[10px] text-slate-600 font-mono">{formatTime(line.time)}</span>
                                         </div>
-                                        <p className={`text-sm leading-relaxed text-slate-200 ${isExpert ? 'blur-sm hover:blur-none transition-all cursor-crosshair' : ''}`}>
+                                        <p className={`text-sm leading-relaxed text-slate-200 ${isExpert ? ' hover: transition-all cursor-crosshair' : ''}`}>
                                             {line.text}
                                         </p>
                                     </div>
@@ -294,7 +294,7 @@ const MobileDevice = ({ content, level, onComplete }) => {
                 </div>
             )}
             {type === 'call' && (callStatus === 'ended' || callStatus === 'declined') && (
-                <div className="hidden lg:flex flex-col w-[300px] xl:w-[350px] h-[600px] bg-slate-900/20 backdrop-blur-sm rounded-2xl border border-white/5 items-center justify-center self-center">
+                <div className="hidden lg:flex flex-col w-[300px] xl:w-[350px] h-[600px] bg-slate-900/20  rounded-2xl border border-white/5 items-center justify-center self-center">
                     <div className="text-slate-500 text-lg font-light">Call Session Ended</div>
                 </div>
             )}
@@ -303,3 +303,4 @@ const MobileDevice = ({ content, level, onComplete }) => {
 };
 
 export default MobileDevice;
+

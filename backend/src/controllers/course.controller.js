@@ -11,10 +11,20 @@ exports.getAllCourses = async (req, res, next) => {
             .populate('instructor', 'firstName lastName')
             .sort('-createdAt');
 
+        // NEW: Add locked status based on user plan
+        const { canAccessLevel } = require('../config/plans');
+        const userPlan = req.user?.currentPlan || 'core_node';
+        
+        const coursesWithAccess = courses.map(course => {
+            const courseObj = course.toObject();
+            courseObj.isLocked = !canAccessLevel(userPlan, course.level);
+            return courseObj;
+        });
+
         res.status(200).json({
             success: true,
-            count: courses.length,
-            data: courses
+            count: coursesWithAccess.length,
+            data: coursesWithAccess
         });
     } catch (err) {
         console.error(err);
@@ -30,12 +40,29 @@ exports.getAllCourses = async (req, res, next) => {
 // @access  Public
 exports.getCourse = async (req, res, next) => {
     try {
-        const course = await Course.findById(req.params.id).populate('instructor', 'firstName lastName');
+        const course = await Course.findById(req.params.id)
+            .populate('instructor', 'firstName lastName')
+            .populate({
+                path: 'modules.labs',
+                select: 'title topic level points'
+            });
 
         if (!course) {
             return res.status(404).json({
                 success: false,
                 message: `Course not found with id of ${req.params.id}`
+            });
+        }
+
+        // NEW: Enforce Plan Restriction for single course access
+        const { canAccessLevel } = require('../config/plans');
+        const userPlan = req.user?.currentPlan || 'core_node';
+        if (!canAccessLevel(userPlan, course.level) && req.user?.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: `The ${course.level.toUpperCase()} course '${course.title}' is locked. Please upgrade your plan to unlock.`,
+                code: 'INSUFFICIENT_PLAN',
+                requiredLevel: course.level
             });
         }
 
@@ -66,6 +93,17 @@ exports.enrollCourse = async (req, res, next) => {
             });
         }
 
+        // NEW: Enforce Plan Restriction for enrollment
+        const { canAccessLevel } = require('../config/plans');
+        const userPlan = req.user?.currentPlan || 'core_node';
+        if (!canAccessLevel(userPlan, course.level) && req.user?.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: `The ${course.level.toUpperCase()} level requires an upgraded subscription.`,
+                code: 'INSUFFICIENT_PLAN'
+            });
+        }
+
         // Check if already enrolled
         const existingEnrollment = await Enrollment.findOne({
             user: req.user.id,
@@ -84,6 +122,15 @@ exports.enrollCourse = async (req, res, next) => {
             user: req.user.id,
             course: req.params.id
         });
+
+        // 🔔 Notify User
+        const notificationService = require('../services/notification.service');
+        await notificationService.trainingAlert(
+            req.user.id,
+            'New Training Roadmap Initialized',
+            `You have successfully enrolled in '${course.title}'. Begin your cognitive hardening now.`,
+            `/dashboard/courses/${course._id}`
+        );
 
         res.status(200).json({
             success: true,

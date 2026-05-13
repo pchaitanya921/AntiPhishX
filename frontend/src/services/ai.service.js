@@ -112,6 +112,19 @@ const aiService = {
         } catch (error) {
             console.error('Failed to record violation:', error);
         }
+    },
+
+    /**
+     * Get behavioral telemetry (cognitive map)
+     */
+    async getBehavior() {
+        try {
+            const response = await api.get('/auth/behavior');
+            return response.data.data;
+        } catch (error) {
+            console.error('Failed to load behavior:', error);
+            return null;
+        }
     }
 };
 

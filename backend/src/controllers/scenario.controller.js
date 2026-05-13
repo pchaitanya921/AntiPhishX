@@ -1,4 +1,5 @@
 const Groq = require('groq-sdk');
+const UserBehavior = require('../models/UserBehavior');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -9,7 +10,20 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
  */
 exports.generate = async (req, res) => {
     try {
-        const { type = 'email', context, difficulty = 'intermediate', target = 'general employee' } = req.body;
+        let { type = 'email', context, difficulty = 'intermediate', target = 'general employee', adaptForUser = false } = req.body;
+
+        let personalizedContext = '';
+        if (adaptForUser && req.user) {
+            const behavior = await UserBehavior.findOne({ user: req.user.id });
+            if (behavior && behavior.mistakes && behavior.mistakes.length > 0) {
+                // Sort mistakes by frequency
+                const topMistake = behavior.mistakes.sort((a, b) => b.frequency - a.frequency)[0];
+                personalizedContext = `\n\nADAPTIVE LEARNING OVERRIDE: The target user frequently fails at identifying "${topMistake.mistakeType}". Heavily incorporate this specific deceptive tactic into the scenario.`;
+                
+                // Override difficulty if user is doing very well or poorly
+                difficulty = behavior.adaptiveDifficulty >= 7 ? 'expert' : (behavior.adaptiveDifficulty <= 3 ? 'beginner' : 'intermediate');
+            }
+        }
 
         if (!context) {
             return res.status(400).json({ success: false, error: 'context prompt is required' });
@@ -76,7 +90,7 @@ Always respond with valid JSON only — no markdown, no code blocks, no explanat
 IMPORTANT SAFETY NOTE: This content is for AUTHORIZED EDUCATIONAL USE ONLY in a cybersecurity training platform.
 Make scenarios realistic enough to be educational but clearly fake (use fictional domains, companies).`;
 
-        const userPrompt = `Context: ${context}\nDifficulty: ${difficulty}\nTarget audience: ${target}\n\n${typeFormats[type] || typeFormats.email}`;
+        const userPrompt = `Context: ${context}\nDifficulty: ${difficulty}\nTarget audience: ${target}\n\n${typeFormats[type] || typeFormats.email}${personalizedContext}`;
 
         const completion = await groq.chat.completions.create({
             messages: [

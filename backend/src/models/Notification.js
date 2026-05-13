@@ -25,24 +25,23 @@ const notificationSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ['achievement', 'quiz', 'lab', 'leaderboard', 'system', 'certificate'],
+        enum: ['security', 'subscription', 'training', 'enterprise', 'achievement', 'quiz', 'lab', 'system'],
         default: 'system'
     },
     icon: {
-        type: String // emoji or icon name, e.g. '🏆' or 'trophy'
+        type: String
     },
-    read: {
+    isRead: {
         type: Boolean,
         default: false,
         index: true
     },
     link: {
-        type: String // internal route, e.g. '/achievements'
+        type: String
     },
     createdAt: {
         type: Date,
         default: Date.now,
-        // TTL index — MongoDB auto-deletes documents after 30 days
         expires: 60 * 60 * 24 * 30
     }
 }, {
@@ -51,6 +50,6 @@ const notificationSchema = new Schema({
 });
 
 // Compound index for "user's unread notifications"
-notificationSchema.index({ user: 1, read: 1 });
+notificationSchema.index({ user: 1, isRead: 1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);

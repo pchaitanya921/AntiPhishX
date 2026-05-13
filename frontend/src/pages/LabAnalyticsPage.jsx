@@ -164,7 +164,7 @@ export default function LabAnalyticsPage() {
 
 function MetricCard({ icon: Icon, label, value, color, bgColor, borderColor }) {
     return (
-        <div className={`p-5 rounded-2xl border ${borderColor} ${bgColor} backdrop-blur-sm transition-transform hover:scale-[1.02]`}>
+        <div className={`p-5 rounded-2xl border ${borderColor} ${bgColor}  transition-transform hover:scale-[1.02]`}>
             <div className="flex items-center justify-between mb-2">
                 <span className={`text-xs font-black uppercase tracking-widest opacity-70 ${color}`}>{label}</span>
                 <Icon size={18} className={color} />
@@ -173,3 +173,4 @@ function MetricCard({ icon: Icon, label, value, color, bgColor, borderColor }) {
         </div>
     );
 }
+

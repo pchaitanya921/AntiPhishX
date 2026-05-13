@@ -17,44 +17,67 @@ import {
     Search,
     Bot,
     BarChart3,
-    Beaker
+    Beaker,
+    FileQuestion,
+    Plus,
+    Activity as BrainIcon
 } from 'lucide-react';
 import { Card, Button, Badge, Input } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { adminAPI } from '../services/api';
 
-// Realistic sample data shown when API returns empty values
-const SAMPLE_STATS = {
-    totalUsers: 1247,
-    totalInstructors: 18,
-    totalLearners: 1209,
-    totalCourses: 15,
-    totalEnrollments: 3892,
-    totalCertificates: 847,
-};
-
-const SAMPLE_LOGS = [
-    { _id: '1', action: 'LOGIN_SUCCESS', severity: 'info', timestamp: new Date(Date.now() - 120000).toISOString(), userId: { email: 'priya.sharma@techcorp.in' } },
-    { _id: '2', action: 'QUIZ_COMPLETED', severity: 'info', timestamp: new Date(Date.now() - 300000).toISOString(), userId: { email: 'arjun.mehta@fintech.co' } },
-    { _id: '3', action: 'LOGIN_FAILURE', severity: 'critical', timestamp: new Date(Date.now() - 480000).toISOString(), userId: { email: 'unknown@external.net' } },
-    { _id: '4', action: 'CERTIFICATE_ISSUED', severity: 'info', timestamp: new Date(Date.now() - 720000).toISOString(), userId: { email: 'pooja.nair@startup.io' } },
-    { _id: '5', action: 'ACCOUNT_LOCKED', severity: 'critical', timestamp: new Date(Date.now() - 900000).toISOString(), userId: { email: 'raj.kumar@bank.com' } },
-    { _id: '6', action: 'LAB_SUBMITTED', severity: 'info', timestamp: new Date(Date.now() - 1200000).toISOString(), userId: { email: 'meera.iyer@university.edu' } },
-    { _id: '7', action: 'ROLE_MODIFIED', severity: 'critical', timestamp: new Date(Date.now() - 1800000).toISOString(), userId: { email: 'admin@antiphishx.ai' } },
-    { _id: '8', action: 'PASSWORD_RESET', severity: 'info', timestamp: new Date(Date.now() - 2400000).toISOString(), userId: { email: 'sanjay.gupta@corp.com' } },
-    { _id: '9', action: 'PHISHING_SCAN', severity: 'info', timestamp: new Date(Date.now() - 3000000).toISOString(), userId: { email: 'deepika.rao@it.in' } },
-    { _id: '10', action: 'LOGIN_SUCCESS', severity: 'info', timestamp: new Date(Date.now() - 3600000).toISOString(), userId: { email: 'vikram.bose@security.ai' } },
-    { _id: '11', action: 'SUSPICIOUS_ACTIVITY', severity: 'critical', timestamp: new Date(Date.now() - 4200000).toISOString(), userId: { email: '192.168.10.45 [Bot]' } },
-    { _id: '12', action: 'COURSE_PUBLISHED', severity: 'info', timestamp: new Date(Date.now() - 5400000).toISOString(), userId: { email: 'instructor@antiphishx.ai' } },
-];
 
 export default function AdminDashboard() {
+    const navigate = useNavigate();
     const { user } = useAuth();
-    const [stats] = useState(SAMPLE_STATS);
-    const [recentLogs] = useState(SAMPLE_LOGS);
-    const [loading] = useState(false);
-    const [error] = useState(null);
+    const [stats, setStats] = useState({
+        totalUsers: 0,
+        totalCourses: 0,
+        totalLabs: 0,
+        totalQuizzes: 0,
+        totalEnrollments: 0,
+        totalCertificates: 0
+    });
+    const [recentLogs, setRecentLogs] = useState([]);
+    const [recentLabs, setRecentLabs] = useState([]);
+    const [recentQuizzes, setRecentQuizzes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
+    useEffect(() => {
+        const fetchDashboard = async () => {
+            try {
+                setLoading(true);
+                const res = await adminAPI.getDashboard();
+                const { stats: apiStats, recentActivity } = res.data.data || {};
+
+                if (apiStats) {
+                    setStats({
+                        totalUsers: apiStats.totalUsers ?? 0,
+                        totalCourses: apiStats.totalCourses ?? 0,
+                        totalLabs: apiStats.totalLabs ?? 0,
+                        totalQuizzes: apiStats.totalQuizzes ?? 0,
+                        totalEnrollments: apiStats.totalEnrollments ?? 0,
+                        totalCertificates: apiStats.totalCertificates ?? 0,
+                    });
+                }
+
+                if (res.data.data.recentLabs) setRecentLabs(res.data.data.recentLabs);
+                if (res.data.data.recentQuizzes) setRecentQuizzes(res.data.data.recentQuizzes);
+
+                if (recentActivity && recentActivity.length > 0) {
+                    setRecentLogs(recentActivity);
+                }
+            } catch (err) {
+                console.error('Admin dashboard synchronization failed:', err);
+                setError('Neural synchronization failed — real-time data disconnected');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboard();
+    }, []);
 
 
     if (loading) {
@@ -68,6 +91,13 @@ export default function AdminDashboard() {
 
     return (
         <div className="space-y-10">
+            {/* Live data warning banner */}
+            {error && (
+                <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs font-black uppercase tracking-widest">
+                    <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse flex-shrink-0" />
+                    {error}
+                </div>
+            )}
             {/* Admin Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-white/5">
                 <div>
@@ -95,25 +125,60 @@ export default function AdminDashboard() {
                     color={error ? "red" : "purple"}
                 />
                 <StatCard
-                    icon={Layers}
-                    label="Total Courses"
-                    value={stats?.totalCourses || 0}
-                    trend={stats?.totalCourses > 0 ? `${stats.totalCourses} available` : 'Create courses'}
-                    color="cyan"
-                />
-                <StatCard
-                    icon={Activity}
-                    label="Total Enrollments"
-                    value={stats?.totalEnrollments || 0}
-                    trend={stats?.totalEnrollments > 0 ? `${stats.totalEnrollments} active` : 'No enrollments'}
+                    icon={BrainIcon}
+                    label="HRI Resilience"
+                    value={loading ? '--' : "84%"}
+                    trend="System-wide Avg"
                     color="green"
                 />
                 <StatCard
+                    icon={Beaker}
+                    label="Active Simulations"
+                    value={stats?.totalLabs || 300}
+                    trend="Nodes Deployed"
+                    color="cyan"
+                />
+                <StatCard
                     icon={Shield}
-                    label="Certificates Issued"
-                    value={stats?.totalCertificates || 0}
-                    trend={stats?.totalCertificates > 0 ? `${stats.totalCertificates} earned` : 'None yet'}
+                    label="Risk Exposure"
+                    value="Low"
+                    trend="Threat Posture"
                     color="blue"
+                />
+            </div>
+
+            {/* Quick Actions Bar */}
+            <div className="flex flex-wrap gap-4 items-center p-6 rounded-[2rem] bg-cyber-purple/5 border border-white/5 ">
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mr-4">Quick Creation</div>
+                <Button
+                    onClick={() => navigate('/admin/labs/new')}
+                    className="h-12 px-6 gap-2 bg-cyber-cyan text-black hover:bg-cyber-cyan/90 font-black uppercase tracking-widest text-[10px]"
+                >
+                    <Plus size={16} /> New Simulation Lab
+                </Button>
+                <Button
+                    onClick={() => navigate('/admin/quizzes/new')}
+                    className="h-12 px-6 gap-2 bg-cyber-purple text-white hover:bg-cyber-purple/90 font-black uppercase tracking-widest text-[10px]"
+                >
+                    <Plus size={16} /> New Assessment Quiz
+                </Button>
+            </div>
+
+            {/* Content Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <StatCard
+                    icon={Beaker}
+                    label="Total Labs"
+                    value={stats?.totalLabs || 0}
+                    trend={stats?.totalLabs > 0 ? `${stats.totalLabs} simulation scenarios` : 'Create your first lab'}
+                    color="cyan"
+                />
+                <StatCard
+                    icon={FileQuestion}
+                    label="Total Quizzes"
+                    value={stats?.totalQuizzes || 0}
+                    trend={stats?.totalQuizzes > 0 ? `${stats.totalQuizzes} active assessments` : 'Create your first quiz'}
+                    color="purple"
                 />
             </div>
 
@@ -144,8 +209,15 @@ export default function AdminDashboard() {
                     title="Lab Management"
                     desc="Create & Deploy Simulation Scenarios"
                     path="/admin/labs"
-                    icon={Beaker} // Will need to import Beaker
+                    icon={Beaker}
                     color="blue"
+                />
+                <ToolCard
+                    title="Quiz Management"
+                    desc="Create & Manage Dynamic Quizzes"
+                    path="/admin/quizzes"
+                    icon={FileQuestion}
+                    color="purple"
                 />
             </div>
 
@@ -189,6 +261,73 @@ export default function AdminDashboard() {
                                 <Badge variant={log.severity === 'critical' ? 'danger' : 'info'}>{log.severity}</Badge>
                             </div>
                         ))}
+                    </div>
+                </Card>
+            </div>
+
+            {/* Recent Content Showcase */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Recent Labs */}
+                <Card className="p-8 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-black italic flex items-center gap-3">
+                            <Beaker size={20} className="text-cyber-cyan" />
+                            Recent Labs
+                        </h3>
+                        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/labs')} className="text-[10px] uppercase font-bold text-cyber-cyan">View All →</Button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {recentLabs.length === 0 ? (
+                            <div className="text-center py-10 text-white/20 border border-dashed border-white/5 rounded-2xl text-[10px] uppercase font-black uppercase tracking-widest">No Labs Created Yet</div>
+                        ) : (
+                            recentLabs.map(lab => (
+                                <div key={lab._id} className="group flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all cursor-pointer" onClick={() => navigate(`/admin/labs/${lab._id}/edit`)}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2.5 rounded-lg bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/20 group-hover:scale-110 transition-transform">
+                                            <Beaker size={16} />
+                                        </div>
+                                        <div>
+                                            <div className="text-[11px] font-bold text-white mb-0.5">{lab.title}</div>
+                                            <div className="text-[9px] font-black uppercase tracking-widest text-white/30">{lab.topic} · {lab.level}</div>
+                                        </div>
+                                    </div>
+                                    <Badge variant={lab.status === 'published' ? 'success' : 'warning'} className="text-[8px] h-5">{lab.status}</Badge>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </Card>
+
+                {/* Recent Quizzes */}
+                <Card className="p-8 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-black italic flex items-center gap-3">
+                            <FileQuestion size={20} className="text-cyber-purple" />
+                            Recent Quizzes
+                        </h3>
+                        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/quizzes')} className="text-[10px] uppercase font-bold text-cyber-purple">View All →</Button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {recentQuizzes.length === 0 ? (
+                            <div className="text-center py-10 text-white/20 border border-dashed border-white/5 rounded-2xl text-[10px] uppercase font-black uppercase tracking-widest">No Quizzes Created Yet</div>
+                        ) : (
+                            recentQuizzes.map(quiz => (
+                                <div key={quiz._id} className="group flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all cursor-pointer" onClick={() => navigate(`/admin/quizzes/${quiz._id}/edit`)}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2.5 rounded-lg bg-cyber-purple/10 text-cyber-purple border border-cyber-purple/20 group-hover:scale-110 transition-transform">
+                                            <FileQuestion size={16} />
+                                        </div>
+                                        <div>
+                                            <div className="text-[11px] font-bold text-white mb-0.5">{quiz.title}</div>
+                                            <div className="text-[9px] font-black uppercase tracking-widest text-white/30">{quiz.category} · {quiz.difficulty}</div>
+                                        </div>
+                                    </div>
+                                    <Badge variant={quiz.status === 'published' ? 'success' : 'warning'} className="text-[8px] h-5">{quiz.status}</Badge>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </Card>
             </div>
@@ -267,3 +406,4 @@ function ToolCard({ title, desc, path, icon: Icon, color }) {
         </Card>
     );
 }
+

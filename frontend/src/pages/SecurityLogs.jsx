@@ -58,11 +58,14 @@ export default function SecurityLogs() {
         }
     };
 
-    const filteredLogs = logs.filter(log =>
-        log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.ipAddress?.includes(searchTerm)
-    );
+    const filteredLogs = logs.filter(log => {
+        if (!log) return false;
+        const search = searchTerm.toLowerCase();
+        const actionMatch = (log.action || '').toLowerCase().includes(search);
+        const emailMatch = (log.userId?.email || '').toLowerCase().includes(search);
+        const ipMatch = (log.ipAddress || '').includes(searchTerm);
+        return actionMatch || emailMatch || ipMatch;
+    });
 
     return (
         <div className="space-y-8">
@@ -209,7 +212,7 @@ export default function SecurityLogs() {
             {/* Log Detail Modal */}
             <AnimatePresence>
                 {selectedLog && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-24 bg-cyber-black/80 backdrop-blur-md">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-24 bg-cyber-black/80 ">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -269,3 +272,4 @@ export default function SecurityLogs() {
         </div>
     );
 }
+

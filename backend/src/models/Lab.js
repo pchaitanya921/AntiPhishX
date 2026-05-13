@@ -13,7 +13,7 @@ const labSchema = new mongoose.Schema({
     topic: {
         type: String,
         required: true,
-        enum: ['phishing', 'vishing', 'smishing', 'qr_code', 'social_engineering', 'advanced_threats', 'malware_detection']
+        enum: ['phishing', 'vishing', 'smishing', 'qr_code', 'social_engineering', 'advanced_threats', 'malware_detection', 'executive_intelligence', 'tactical_defense', 'cognitive_security', 'advanced_ai_adaptive']
     },
     level: {
         type: String,
@@ -66,18 +66,57 @@ const labSchema = new mongoose.Schema({
     }],
     correctAnswer: {
         type: String,
-        required: [true, 'Correct answer/determination is required'],
+        // Make this optional for multi-stage
         select: false
     },
     explanation: {
         type: String,
-        required: [true, 'Detailed explanation is required for learning value']
+        // Optional for multi-stage
     },
+    isMultiStage: {
+        type: Boolean,
+        default: false
+    },
+    stages: [{
+        stageId: String,
+        type: {
+            type: String,
+            enum: ['email', 'url', 'call', 'sms', 'qr', 'file', 'chat', 'social_engineering']
+        },
+        content: Object,
+        options: [{
+            text: String,
+            nextStageId: String, // Which stage to load next, or "end"
+            outcomePoints: Number, // Points to add/deduct
+            triggerConsequence: Boolean // Does this trigger a simulated breach?
+        }]
+    }],
+    consequences: [{
+        stageId: String,
+        message: String,
+        severity: { type: String, enum: ['low', 'medium', 'high', 'critical'] },
+        lossAmount: Number // Imaginary currency/data loss
+    }],
     status: {
         type: String,
         enum: ['draft', 'published', 'archived'],
         default: 'published'
     },
+    // AI Orchestration Metadata
+    behavioralVectors: {
+        urgency: { type: Number, default: 0 }, // 0 to 10
+        authority: { type: Number, default: 0 },
+        reward: { type: Number, default: 0 },
+        curiosity: { type: Number, default: 0 },
+        fear: { type: Number, default: 0 },
+        technical: { type: Number, default: 0 }
+    },
+    adaptiveScaling: {
+        type: Boolean,
+        default: true,
+        description: 'Does this lab support AI-driven difficulty scaling?'
+    },
+    tags: [String],
     createdAt: {
         type: Date,
         default: Date.now

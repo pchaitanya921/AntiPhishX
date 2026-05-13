@@ -1,3 +1,4 @@
+// Neural Cache Reset: Link Established
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TranscriptPanel from '../components/TranscriptPanel';
@@ -15,7 +16,9 @@ import {
     Layers,
     ChevronDown,
     ChevronRight,
-    Award
+    Award,
+    Wand2,
+    Zap
 } from 'lucide-react';
 import { Card, Button, Badge, Spinner, VideoPlayer } from '../components/ui';
 import { courseAPI, noteAPI } from '../services/api';
@@ -152,50 +155,132 @@ export default function CoursePlayerPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Spinner size="lg" variant="purple" />
+            <div className="min-h-screen bg-[#0A0A0A] p-12 space-y-12 animate-pulse">
+                <div className="h-[400px] w-full bg-white/5 rounded-[4rem]" />
+                <div className="flex gap-12 max-w-[1700px] mx-auto w-full">
+                    <div className="flex-1 space-y-8">
+                        <div className="h-64 bg-white/5 rounded-[3rem]" />
+                        <div className="space-y-4">
+                            <div className="h-10 w-1/2 bg-white/5 rounded-xl" />
+                            <div className="h-4 w-1/4 bg-white/5 rounded-lg" />
+                        </div>
+                    </div>
+                    <div className="w-[450px] h-[600px] bg-white/5 rounded-[3rem]" />
+                </div>
             </div>
         );
     }
 
     if (!course) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-                <Shield size={64} className="text-white/20" />
-                <h1 className="text-2xl font-black uppercase tracking-widest text-white/40">Node Not Found</h1>
-                <Button onClick={() => navigate('/courses')}>Return to Archive</Button>
+            <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center p-8 text-center selection:bg-red-500 selection:text-white">
+                <div className="relative mb-12">
+                    <div className="absolute inset-0 bg-red-500/20 blur-[100px] animate-pulse" />
+                    <div className="w-32 h-32 rounded-[2.5rem] bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 relative z-10">
+                        <Activity size={60} className="animate-pulse" />
+                    </div>
+                </div>
+                
+                <div className="space-y-4 max-w-xl relative z-10">
+                    <Badge variant="danger" className="h-6 px-4 mb-4 animate-bounce">Neural Link Severed</Badge>
+                    <h1 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-tight">
+                        Node <span className="text-red-500">Recovery</span> Failed
+                    </h1>
+                    <p className="text-white/30 font-medium italic text-sm leading-relaxed">
+                        "Intelligence uplink could not be established with the requested training node. This may be due to restricted sector access or a temporal synchronization error in the Neural Archive."
+                    </p>
+                </div>
+
+                <div className="flex gap-6 mt-12 relative z-10">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => window.location.reload()}
+                        className="h-16 px-10 rounded-2xl bg-white text-black hover:bg-red-500 hover:text-white transition-all font-black uppercase tracking-widest text-[10px]"
+                    >
+                        Retry Uplink
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/courses')}
+                        className="h-16 px-10 rounded-2xl border-white/10 hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
+                    >
+                        Return to Hub
+                    </Button>
+                </div>
+
+                <div className="mt-20 flex flex-col items-center gap-2 opacity-20">
+                    <div className="w-px h-20 bg-gradient-to-b from-red-500 to-transparent" />
+                    <p className="text-[9px] font-black uppercase tracking-[0.5em]">Sector_Diagnostic_Mode</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-cyber-black flex flex-col">
-            {/* Player Header */}
-            <div className="p-8 border-b border-white/5 bg-white/[0.02] backdrop-blur-xl sticky top-0 z-50">
-                <div className="flex items-center justify-between gap-6 max-w-[1700px] mx-auto w-full">
-                    <div className="flex items-center gap-6">
-                        <button
-                            onClick={() => navigate('/courses')}
-                            className="p-3 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all text-white/60 hover:text-white group"
-                        >
-                            <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                        </button>
-                        <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <Badge variant="purple" className="text-[10px] py-0 px-2">{course.category}</Badge>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-white/30 italic">Sector: Training Node</span>
-                            </div>
-                            <h1 className="text-2xl font-black italic text-white tracking-tighter">{course.title}</h1>
+        <div className="min-h-screen bg-[#0A0A0A] flex flex-col selection:bg-cyber-cyan selection:text-black">
+            {/* Cinematic Hero Banner */}
+            <div className="relative h-[400px] w-full overflow-hidden border-b border-white/5">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10" />
+                <div className="absolute inset-0 bg-black/40 z-10" />
+                <motion.img 
+                    initial={{ scale: 1.1 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 1.5 }}
+                    src={course.thumbnail || "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=2070"}
+                    className="w-full h-full object-cover"
+                />
+                
+                <div className="absolute inset-0 z-20 flex flex-col justify-end p-12 max-w-[1700px] mx-auto w-full">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-6"
+                    >
+                        <div className="flex items-center gap-4">
+                            <Badge variant="outline" className="bg-cyber-cyan/10 border-cyber-cyan/30 text-cyber-cyan text-[10px] px-4 py-1.5 rounded-full uppercase tracking-[0.2em] font-black">
+                                {course.category?.replace('_', ' ')}
+                            </Badge>
+                            <Badge variant="outline" className="bg-white/5 border-white/10 text-white/40 text-[10px] px-4 py-1.5 rounded-full uppercase tracking-[0.2em] font-black">
+                                {course.level} clearance required
+                            </Badge>
                         </div>
-                    </div>
+                        
+                        <div className="space-y-2">
+                            <h1 className="text-6xl lg:text-8xl font-black italic tracking-tighter text-white uppercase leading-none">
+                                {course.title}
+                            </h1>
+                            <div className="flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.3em] text-white/30 pt-4">
+                                <div className="flex items-center gap-3">
+                                    <Clock size={16} className="text-cyber-cyan" /> {course.duration || '6 Hours'} Estimated
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Layers size={16} className="text-cyber-cyan" /> {course.modules?.length || 0} Strategic Sectors
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Award size={16} className="text-cyber-cyan" /> Level {course.level} Certification
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+
+                {/* Return Button Overlay */}
+                <div className="absolute top-8 left-12 z-30">
+                    <button
+                        onClick={() => navigate('/courses')}
+                        className="flex items-center gap-3 px-6 py-3 bg-black/60  border border-white/10 rounded-2xl hover:bg-white hover:text-black transition-all group font-black uppercase tracking-widest text-[10px]"
+                    >
+                        <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        Exit Node
+                    </button>
                 </div>
             </div>
 
-            <div className="flex-1 flex max-w-[1700px] mx-auto w-full p-8 gap-10">
+            <div className="flex-1 flex max-w-[1700px] mx-auto w-full p-12 gap-12 -mt-12 relative z-20">
                 {/* Main Content: Video & Details */}
-                <div className="flex-1 space-y-10">
+                <div className="flex-1 space-y-12">
                     {/* Video Player Section */}
-                    <div className="aspect-video w-full">
+                    <Card className="aspect-video w-full rounded-[3rem] overflow-hidden border-white/10 shadow-2xl bg-black">
                         <VideoPlayer
                             ref={videoPlayerRef}
                             url={activeVideo?.url}
@@ -205,27 +290,41 @@ export default function CoursePlayerPage() {
                             onTimeUpdate={(time) => setCurrentTime(time)}
                             className="h-full w-full"
                         />
-                    </div>
+                    </Card>
 
                     {/* Active Unit Info */}
-                    <div className="space-y-8">
-                        <div>
-                            <h2 className="text-3xl font-black italic text-white mb-3">{activeVideo?.title || 'Initializing Neural Link...'}</h2>
-                            <div className="flex items-center gap-6 text-xs font-bold text-white/40">
-                                <div className="flex items-center gap-2">
-                                    <Clock size={16} className="text-cyber-purple" />
-                                    {activeVideo?.duration || 0} Seconds
+                    <div className="space-y-10">
+                        <div className="flex items-start justify-between gap-8">
+                            <div className="space-y-4">
+                                <h2 className="text-4xl font-black italic text-white uppercase tracking-tight">{activeVideo?.title || 'Initializing Neural Link...'}</h2>
+                                <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 italic">
+                                    <div className="flex items-center gap-2">
+                                        <Clock size={14} className="text-cyber-cyan" />
+                                        Duration: {activeVideo?.duration || 0} Seconds
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Shield size={14} className="text-cyber-cyan" />
+                                        Origin: {activeVideo?.source || 'SECURE_NODE'}
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Shield size={16} className="text-cyber-cyan" />
-                                    Neural Uplink: {activeVideo?.source === 'SECURE_NODE' ? 'INTERNAL' : (activeVideo?.source || 'AUTHORIZED')}
-                                </div>
+                                {activeVideo?.summary && (
+                                    <p className="text-white/40 text-base leading-relaxed italic max-w-4xl">
+                                        "{activeVideo.summary}"
+                                    </p>
+                                )}
                             </div>
-                            {activeVideo?.summary && (
-                                <p className="mt-4 text-white/60 text-sm leading-relaxed max-w-3xl italic">
-                                    {activeVideo.summary}
-                                </p>
-                            )}
+                            
+                            {/* AI Copilot Toggle Inside Player */}
+                            <div className="shrink-0 pt-2">
+                                <Button 
+                                    variant="outline" 
+                                    className="h-16 px-8 rounded-2xl border-white/5 bg-white/[0.02] hover:bg-cyber-cyan/10 hover:border-cyber-cyan/30 group"
+                                    onClick={() => navigate('/ai-copilot')}
+                                >
+                                    <Wand2 className="mr-3 text-cyber-cyan group-hover:animate-pulse" size={18} />
+                                    AI Learning Assistant
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="space-y-10">
@@ -451,7 +550,7 @@ export default function CoursePlayerPage() {
 
                 {/* Sidebar: Course Content / Playlist */}
                 <div className="w-[450px] space-y-6">
-                    <Card className="sticky top-40 bg-white/[0.02] backdrop-blur-xl border border-white/5 h-[calc(100vh-12rem)] flex flex-col overflow-hidden">
+                    <Card className="sticky top-40 bg-white/[0.02]  border border-white/5 h-[calc(100vh-12rem)] flex flex-col overflow-hidden">
                         <div className="p-8 border-b border-white/5">
                             <h3 className="text-xl font-black italic text-white flex items-center gap-3">
                                 <BookOpen size={24} className="text-cyber-purple" />
@@ -491,7 +590,7 @@ export default function CoursePlayerPage() {
                                             >
                                                 {module.videos?.map((video, vIdx) => (
                                                     <button
-                                                        key={vIdx}
+                                                        key={`v-${vIdx}`}
                                                         onClick={() => setActiveVideo(video)}
                                                         className={`
                                                             w-full flex items-center gap-4 p-4 rounded-2xl transition-all border group
@@ -508,19 +607,43 @@ export default function CoursePlayerPage() {
                                                             {activeVideo?.title === video.title ? <PlayCircle size={18} fill="currentColor" /> : <PlayCircle size={18} />}
                                                         </div>
                                                         <div className="flex-1 text-left min-w-0">
-                                                            <p className="text-[11px] font-bold truncate leading-tight">{video.title}</p>
-                                                            <p className="text-[9px] font-black uppercase tracking-tighter opacity-40">{video.duration} Sec • {video.source}</p>
+                                                            <p className="text-[11px] font-black truncate leading-tight">{video.title}</p>
+                                                            <p className="text-[9px] font-black uppercase tracking-tighter opacity-40">{video.duration} Sec • Video</p>
                                                         </div>
                                                     </button>
                                                 ))}
-                                                {(!module.videos || module.videos.length === 0) && (
-                                                    <p className="text-center py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/10 italic">No nodes detected in this sector</p>
-                                                )}
+
+                                                {module.labs?.map((lab, lIdx) => (
+                                                    <button
+                                                        key={`l-${lIdx}`}
+                                                        onClick={() => navigate(`/labs/${lab._id}`)}
+                                                        className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all border border-transparent bg-emerald-500/5 text-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 group"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                                                            <Zap size={18} />
+                                                        </div>
+                                                        <div className="flex-1 text-left min-w-0">
+                                                            <p className="text-[11px] font-black truncate leading-tight">{lab.title}</p>
+                                                            <p className="text-[9px] font-black uppercase tracking-tighter opacity-40">Simulation Lab • {lab.points} PT</p>
+                                                        </div>
+                                                        <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-all" />
+                                                    </button>
+                                                ))}
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
                                 </div>
                             ))}
+
+                            {/* Final Quiz / Certification CTA */}
+                            <div className="pt-8 mt-4 border-t border-white/5">
+                                <Button 
+                                    className="w-full h-20 rounded-[2rem] bg-gradient-to-r from-cyber-cyan to-emerald-500 text-black font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+                                    onClick={() => navigate('/quizzes')}
+                                >
+                                    Initialize Final Exam
+                                </Button>
+                            </div>
                         </div>
                     </Card>
                 </div>
@@ -528,3 +651,4 @@ export default function CoursePlayerPage() {
         </div>
     );
 }
+

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Card, Input } from '../../components/ui';
+import { Button, Card, Input, Badge } from '../../components/ui';
 import {
     Mail,
     Lock,
@@ -13,9 +13,120 @@ import {
     BookOpen,
     HelpCircle,
     Award,
-    Shield
+    Shield,
+    ArrowRight,
+    Fingerprint,
+    Cpu,
+    Sparkles,
+    BrainCircuit,
+    MousePointer2,
+    Terminal,
+    Activity,
+    LockIcon,
+    Globe
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- Reusable Animated Components ---
+
+const MouseFollower = () => {
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    useEffect(() => {
+        const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+    return (
+        <motion.div 
+            className="fixed inset-0 pointer-events-none z-50 overflow-hidden"
+            animate={{ x: mousePos.x, y: mousePos.y }}
+            transition={{ type: "spring", damping: 35, stiffness: 150, mass: 0.5 }}
+        >
+            <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/10  rounded-full opacity-40" />
+        </motion.div>
+    );
+};
+
+const RevealText = ({ text, className = "", delay = 0 }) => {
+    const words = text.split(" ");
+    const container = {
+        hidden: { opacity: 0 },
+        visible: (i = 1) => ({
+            opacity: 1,
+            transition: { staggerChildren: 0.12, delayChildren: delay + 0.04 * i },
+        }),
+    };
+    const child = {
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { type: "spring", damping: 12, stiffness: 100 },
+        },
+        hidden: {
+            opacity: 0,
+            y: 20,
+            transition: { type: "spring", damping: 12, stiffness: 100 },
+        },
+    };
+    return (
+        <motion.div
+            style={{ display: "flex", flexWrap: "wrap" }}
+            variants={container}
+            initial="hidden"
+            animate="visible"
+            className={className}
+        >
+            {words.map((word, index) => (
+                <motion.span variants={child} key={index} style={{ marginRight: "0.25em" }}>
+                    {word}
+                </motion.span>
+            ))}
+        </motion.div>
+    );
+};
+
+const LightOrb = ({ x = "50%", y = "50%", color = "emerald", size = "600px", delay = 0 }) => {
+    const colors = {
+        emerald: "bg-emerald-500/20",
+        lime: "bg-lime-500/15",
+        silver: "bg-slate-400/10",
+    };
+    return (
+        <motion.div
+            animate={{ 
+                x: ["-10%", "10%", "-10%"],
+                y: ["-5%", "5%", "-5%"],
+                scale: [1, 1.3, 1],
+                opacity: [0.2, 0.4, 0.2]
+            }}
+            transition={{ duration: 25, repeat: Infinity, delay, ease: "easeInOut" }}
+            className={`absolute ${colors[color] || colors.emerald} rounded-full  pointer-events-none z-0`}
+            style={{ left: x, top: y, width: size, height: size, transform: "translate(-50%, -50%)" }}
+        />
+    );
+};
+
+const FloatingShard = ({ delay = 0, x = "0%", y = "0%", size = "100px", color = "emerald", rotateStart = 0 }) => {
+    const colorMap = {
+        emerald: "bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.15)]",
+        lime: "bg-lime-500/10 border-lime-500/30 shadow-[0_0_30px_rgba(163,230,53,0.15)]",
+        silver: "bg-slate-400/10 border-slate-400/30 shadow-[0_0_30px_rgba(148,163,184,0.15)]",
+    };
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0, rotate: rotateStart }}
+            animate={{ 
+                opacity: [0.1, 0.25, 0.1],
+                scale: [1, 1.15, 1],
+                y: ["0px", "-60px", "0px"],
+                rotate: [rotateStart, rotateStart + 90, rotateStart]
+            }}
+            transition={{ duration: 20 + Math.random() * 10, repeat: Infinity, delay, ease: "easeInOut" }}
+            className={`absolute ${colorMap[color]} border  rounded-[3rem] z-0 pointer-events-none`}
+            style={{ left: x, top: y, width: size, height: size }}
+        />
+    );
+};
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -24,233 +135,309 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-    });
+    const [ssoMode, setSsoMode] = useState(false);
+    const [ssoDomain, setSsoDomain] = useState('');
+    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [nodeStatus, setNodeStatus] = useState('ACTIVE');
 
-    // Redirect if already authenticated
     useEffect(() => {
-        if (isAuthenticated) {
-            navigate('/dashboard', { replace: true });
-        }
+        if (isAuthenticated) navigate('/dashboard', { replace: true });
+        const interval = setInterval(() => {
+            setNodeStatus(prev => prev === 'ACTIVE' ? 'SYNCHING' : 'ACTIVE');
+        }, 8000);
+        return () => clearInterval(interval);
     }, [isAuthenticated, navigate]);
 
     const successMessage = location.state?.message;
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleSsoSubmit = async (e) => {
+        e.preventDefault();
+        if (!ssoDomain) {
+            setError('Please enter your corporate domain.');
+            return;
+        }
         setError('');
+        setLoading(true);
+        try {
+            // Redirect to backend SSO initiator
+            window.location.href = `${import.meta.env.VITE_API_URL}/auth/sso/login?domain=${ssoDomain}`;
+        } catch (err) {
+            setError('SSO Gateway unreachable.');
+            setLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
-
         try {
-            console.log('Attempting login with email:', formData.email);
-            await login(formData.email, formData.password);
-            console.log('Login successful');
+            await login(formData.email, formData.password, 'learner');
             navigate('/dashboard');
         } catch (err) {
-            console.error('Login error:', err);
-            const errorMsg = err.response?.data?.message || err.message || 'Authentication failed. Invalid credentials.';
-            setError(errorMsg);
+            setError(err.response?.data?.message || err.message || 'Node authentication failure.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="auth-page relative min-h-screen flex items-center justify-center p-6 bg-cyber-black overflow-hidden">
-            {/* Background FX */}
-            <div className="absolute inset-0 bg-cyber-grid opacity-10" />
-            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyber-purple/10 blur-[150px] rounded-full" />
+        <div className="relative min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center p-6 selection:bg-emerald-500 selection:text-black overflow-hidden font-sans">
+            <MouseFollower />
+            
+            {/* --- CINEMATIC obsidian BACKGROUND --- */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute inset-0 bg-[#0A0A0A]" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#0D0D0D] via-[#0A0A0A] to-[#121212]" />
+                
+                <LightOrb x="15%" y="15%" color="emerald" size="1000px" delay={0} />
+                <LightOrb x="85%" y="20%" color="lime" size="700px" delay={5} />
+                <LightOrb x="50%" y="85%" color="silver" size="1200px" delay={10} />
 
-            {/* Logo - Fixed at top left */}
-            <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-cyber-purple/20 border border-cyber-purple/30 backdrop-blur-sm">
-                    <Shield className="w-6 h-6 text-cyber-purple" />
-                </div>
-                <span className="text-xl font-black text-white italic tracking-tighter uppercase">
-                    AntiPhish<span className="cyber-gradient-text">X</span>
-                </span>
+                {/* Animated Cyber Grid */}
+                <motion.div 
+                    animate={{ 
+                        opacity: [0.01, 0.03, 0.01],
+                        y: ["0%", "5%", "0%"]
+                    }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 bg-cyber-grid opacity-[0.02] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" 
+                />
+
+                <FloatingShard x="2%" y="10%" size="240px" color="emerald" delay={0} rotateStart={15} />
+                <FloatingShard x="90%" y="5%" size="180px" color="silver" delay={4} rotateStart={-10} />
+                <FloatingShard x="8%" y="70%" size="220px" color="lime" delay={8} rotateStart={-45} />
             </div>
 
-            <div className="relative z-10 w-full max-w-[1100px] grid lg:grid-cols-2 gap-12 items-center">
+            {/* Header / Brand */}
+            <div className="fixed top-12 left-12 z-50">
+                <Link to="/" className="flex items-center gap-4 group">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-emerald-500/20  rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                        <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center group-hover:border-emerald-500/50 transition-all duration-700 relative z-10 ">
+                            <Shield className="w-7 h-7 text-white group-hover:text-emerald-400 transition-colors" />
+                        </div>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-2xl font-black italic tracking-tighter uppercase leading-none">
+                            AntiPhish<span className="text-emerald-400">X</span>
+                        </span>
+                        <span className="text-[9px] font-black tracking-[0.4em] text-white/20 uppercase mt-1">Command Core</span>
+                    </div>
+                </Link>
+            </div>
 
-                {/* Left Side: Welcome Message */}
+            {/* Live Telemetry Bar */}
+            <div className="fixed bottom-12 left-12 z-50 hidden xl:flex items-center gap-10">
+                <div className="flex items-center gap-4">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Node Status: <span className="text-emerald-400">{nodeStatus}</span></span>
+                </div>
+                <div className="h-4 w-px bg-white/10" />
+                <div className="flex items-center gap-4">
+                    <Globe size={14} className="text-white/20" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Latency: <span className="text-white/60">14ms</span></span>
+                </div>
+            </div>
+
+            <div className="relative z-10 w-full max-w-[1400px] grid lg:grid-cols-2 gap-32 items-center">
+                {/* Left Content */}
                 <motion.div
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="hidden lg:block space-y-8"
+                    transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                    className="hidden lg:block space-y-16"
                 >
-                    <div>
-                        <h1 className="text-5xl font-black mb-4 leading-tight text-white">
-                            Welcome to <span className="cyber-gradient-text">AntiPhishX</span>
+                    <div className="space-y-10">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <Badge className="bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-[11px] font-black uppercase tracking-[0.5em] px-7 py-3 rounded-full  shadow-[0_0_30px_rgba(16,185,129,0.05)]">
+                                Secure Protocol 7.2
+                            </Badge>
+                        </motion.div>
+                        
+                        <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter leading-[0.9] uppercase">
+                            <RevealText text="ACCESS THE" delay={0.4} />
+                            <motion.span 
+                                initial={{ opacity: 0, x: -50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
+                                className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-lime-300 to-emerald-500 pb-4 block filter drop-shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                            >
+                                INTELLIGENCE
+                            </motion.span>
                         </h1>
-                        <p className="text-white/80 text-lg font-medium tracking-widest">
-                            ACCESS ENTERPRISE CYBERSECURITY LABS
-                        </p>
+                        
+                        <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 1, duration: 1 }}
+                            className="text-white/30 text-2xl font-medium leading-relaxed max-w-lg"
+                        >
+                            Establish a secure handshake with the organization's human-risk neural node.
+                        </motion.p>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="flex items-start gap-4">
-                            <div className="p-3 rounded-xl bg-cyber-purple/20 border border-cyber-purple/30">
-                                <Shield className="w-6 h-6 text-cyber-purple" />
-                            </div>
-                            <div>
-                                <h3 className="text-white font-bold text-lg mb-1">SECURE IDENTITY</h3>
-                                <p className="text-white/70 text-sm">Your credentials are protected by military-grade Argon2id hashing.</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-4">
-                            <div className="p-3 rounded-xl bg-cyan-500/20 border border-cyan-500/30">
-                                <ShieldCheck className="w-6 h-6 text-cyan-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-white font-bold text-lg mb-1">ENTERPRISE READY</h3>
-                                <p className="text-white/70 text-sm">Join thousands of professionals in the AntiPhishX cyber ecosystem.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4 pt-4">
-                        <div className="px-4 py-2 rounded-lg bg-cyber-purple/10 border border-cyber-purple/30">
-                            <span className="text-cyber-purple font-black text-xs uppercase tracking-wider">ISO 27001 ALIGNED</span>
-                        </div>
-                        <div className="px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                            <span className="text-cyan-400 font-black text-xs uppercase tracking-wider">MFA READY</span>
-                        </div>
+                    <div className="grid grid-cols-2 gap-8">
+                        <FeatureBox 
+                            icon={Fingerprint} 
+                            label="BIOMETRIC READY" 
+                            status="ACTIVE" 
+                            delay={1.2}
+                        />
+                        <FeatureBox 
+                            icon={BrainCircuit} 
+                            label="AI ORCHESTRATED" 
+                            status="MONITORING" 
+                            delay={1.4}
+                        />
                     </div>
                 </motion.div>
 
-                {/* Right Side: Login Form */}
+                {/* Login Form Container */}
                 <motion.div
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="w-full"
+                    transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full relative"
                 >
-                    <div className="backdrop-blur-2xl bg-gradient-to-br from-white/10 to-white/5 p-10 rounded-3xl border border-white/20 shadow-2xl">
-                        <div className="mb-8">
-                            <h2 className="text-3xl font-black text-white mb-2">
-                                Welcome Back 👋
-                            </h2>
-                            <p className="text-white/50 text-sm font-medium">
-                                Securely access your AntiPhishX account.
-                            </p>
-                        </div>
-
-                        {successMessage && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center gap-3"
-                            >
-                                <CheckCircle2 className="text-green-400" size={20} />
-                                <p className="text-green-300 text-sm font-medium">{successMessage}</p>
-                            </motion.div>
-                        )}
-
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3"
-                            >
-                                <AlertCircle className="text-red-400" size={20} />
-                                <p className="text-red-300 text-sm font-medium">{error}</p>
-                            </motion.div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-white/60 mb-2 ml-1">
-                                    EMAIL ADDRESS
-                                </label>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        placeholder="name@company.com"
-                                        className="w-full h-14 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-cyber-purple/40 focus:border-cyber-purple/50 transition-all"
-                                        required
-                                    />
-                                </div>
+                    {/* Background Glow behind the card */}
+                    <div className="absolute -inset-10 bg-emerald-500/5  rounded-full opacity-50 pointer-events-none" />
+                    
+                    <div className="p-12 lg:p-20 rounded-[5rem] bg-[#111111]/60 border border-white/10  shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden group">
+                        {/* Internal Animated Gradient */}
+                        <motion.div 
+                            className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-lime-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"
+                            animate={{ 
+                                backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"]
+                            }}
+                            transition={{ duration: 15, repeat: Infinity }}
+                        />
+                        
+                        <div className="relative z-10">
+                            <div className="mb-16 space-y-4">
+                                <h2 className="text-5xl font-black italic tracking-tighter uppercase text-white">
+                                    {ssoMode ? 'Enterprise SSO' : 'Initialize Session'}
+                                </h2>
+                                <p className="text-white/20 text-lg font-medium">
+                                    {ssoMode ? 'Establish corporate handshake.' : 'Verify node access credentials.'}
+                                </p>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-white/60 mb-2 ml-1">
-                                    ACCESS PASSWORD
-                                </label>
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        placeholder="••••••••"
-                                        className="w-full h-14 pl-12 pr-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-cyber-purple/40 focus:border-cyber-purple/50 transition-all"
-                                        required
-                                    />
+                            {successMessage && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mb-10 p-6 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-black uppercase tracking-widest flex items-center gap-5"
+                                >
+                                    <CheckCircle2 size={24} /> {successMessage}
+                                </motion.div>
+                            )}
+
+                            {error && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mb-10 p-6 rounded-[2.5rem] bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-black uppercase tracking-widest flex items-center gap-5"
+                                >
+                                    <AlertCircle size={24} /> {error}
+                                </motion.div>
+                            )}
+
+                            <form onSubmit={ssoMode ? handleSsoSubmit : handleSubmit} className="space-y-10">
+                                <div className="space-y-6">
+                                    <div className="relative group/input">
+                                        <div className="absolute left-8 top-1/2 -translate-y-1/2 text-white/10 group-focus-within/input:text-emerald-400 transition-colors">
+                                            <Mail size={24} />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={ssoMode ? ssoDomain : formData.email}
+                                            onChange={(e) => ssoMode ? setSsoDomain(e.target.value) : setFormData({...formData, email: e.target.value})}
+                                            placeholder={ssoMode ? "company.com" : "identity@enterprise.com"}
+                                            className="w-full h-20 pl-20 pr-10 bg-white/[0.03] border border-white/5 rounded-[2.5rem] text-xl text-white font-medium placeholder:text-white/10 focus:outline-none focus:border-emerald-500/40 focus:bg-white/[0.06] transition-all"
+                                        />
+                                    </div>
+
+                                    {!ssoMode && (
+                                        <div className="relative group/input">
+                                            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-white/10 group-focus-within/input:text-lime-400 transition-colors">
+                                                <LockIcon size={24} />
+                                            </div>
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                                placeholder="••••••••"
+                                                className="w-full h-20 pl-20 pr-20 bg-white/[0.03] border border-white/5 rounded-[2.5rem] text-xl text-white font-medium placeholder:text-white/10 focus:outline-none focus:border-lime-500/40 focus:bg-white/[0.06] transition-all"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-8 top-1/2 -translate-y-1/2 text-white/10 hover:text-white transition-colors"
+                                            >
+                                                {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    className={`w-full h-20 rounded-full font-black uppercase tracking-[0.3em] text-[12px] shadow-2xl transition-all duration-700 ${ssoMode ? 'bg-emerald-500 text-black hover:bg-white' : 'bg-gradient-to-r from-emerald-500 to-lime-400 text-black hover:scale-[1.03] shadow-[0_20px_50px_rgba(16,185,129,0.3)]'}`}
+                                    loading={loading}
+                                >
+                                    {ssoMode ? 'Establish SSO Handshake' : 'Initialize Secure Session'}
+                                </Button>
+
+                                <div className="flex flex-col gap-8 pt-8 items-center">
                                     <button
                                         type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/80 transition-colors"
+                                        onClick={() => setSsoMode(!ssoMode)}
+                                        className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20 hover:text-emerald-400 transition-colors flex items-center gap-3"
                                     >
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        <Terminal size={14} />
+                                        {ssoMode ? 'Switch to Standard Access' : 'Enterprise SSO Gateway'}
                                     </button>
+                                    <div className="flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.3em] text-white/10">
+                                        <span>No Node Identity?</span>
+                                        <Link to="/register" className="text-emerald-400 hover:text-lime-300 transition-colors border-b border-emerald-500/30 pb-1">
+                                            Register Node
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <Button
-                                type="submit"
-                                className="w-full h-14 bg-gradient-to-r from-cyber-purple to-purple-600 hover:from-cyber-purple/90 hover:to-purple-600/90 text-white font-black uppercase tracking-[0.2em] text-xs rounded-xl shadow-lg hover:shadow-cyber-purple/50 transition-all duration-300"
-                                loading={loading}
-                            >
-                                {loading ? 'Authenticating...' : 'Sign In'}
-                            </Button>
-
-                            {/* Forgot Password Link */}
-                            <div className="text-center">
-                                <Link to="/forgot-password" className="text-white/60 hover:text-cyber-purple text-sm font-medium transition-colors">
-                                    Forgot your password?
-                                </Link>
-                            </div>
-                        </form>
-
-                        {/* Security Indicators */}
-                        <div className="mt-8 flex flex-wrap justify-center gap-4 text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 size={12} className="text-cyan-400" />
-                                <span>Encrypted Session</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 size={12} className="text-cyan-400" />
-                                <span>MFA Protected</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 size={12} className="text-cyan-400" />
-                                <span>Zero Trust</span>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 text-center text-sm">
-                            <span className="text-white/40">Existing identity node? </span>
-                            <Link to="/register" className="text-cyber-purple font-bold hover:underline underline-offset-4">
-                                Authenticate
-                            </Link>
+                            </form>
                         </div>
                     </div>
                 </motion.div>
-
             </div>
         </div>
     );
 }
+
+function FeatureBox({ icon: Icon, label, status, delay = 0 }) {
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, duration: 0.8 }}
+            className="p-10 rounded-[3rem] bg-white/[0.02] border border-white/5  flex flex-col gap-8 items-start group hover:border-emerald-500/40 transition-all duration-700"
+        >
+            <div className="w-16 h-16 rounded-[1.5rem] bg-white/5 flex items-center justify-center text-white/20 group-hover:text-emerald-400 group-hover:bg-emerald-500/10 transition-all duration-700 relative">
+                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500  animate-pulse opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Icon size={32} />
+            </div>
+            <div className="space-y-3">
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 group-hover:text-white transition-colors block">{label}</span>
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />
+                    <span className="text-[9px] font-bold text-emerald-500/60 uppercase tracking-widest">{status}</span>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+

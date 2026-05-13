@@ -59,7 +59,7 @@ export default function ThreatInsightPanel({ isOpen, onClose, analytics }) {
 
     const recentActivity = (analytics?.recentActivity || []).slice(0, 3).map(log => ({
         id: log._id,
-        action: log.action.replace(/_/g, ' '),
+        action: String(log.action || log.topic || 'System Activity').replace(/_/g, ' '),
         safe: log.severity !== 'critical',
     }));
 
@@ -114,7 +114,7 @@ export default function ThreatInsightPanel({ isOpen, onClose, analytics }) {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999]"
+                        className="fixed inset-0 bg-black/60  z-[9999]"
                     />
 
                     {/* Floating Modal Panel */}
@@ -258,3 +258,4 @@ function ClockIcon() {
         </svg>
     )
 }
+
