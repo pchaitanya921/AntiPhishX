@@ -57,13 +57,11 @@ app.use((req, res, next) => {
     next();
 });
 
-// Development request logging only
-if (process.env.NODE_ENV === 'development') {
-    app.use((req, res, next) => {
-        console.log(`[REQUEST] ${req.method} ${req.url}`);
-        next();
-    });
-}
+// Production request logging for debugging
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+    next();
+});
 
 // Development logging
 if (process.env.NODE_ENV === 'development') {
