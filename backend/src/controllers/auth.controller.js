@@ -49,7 +49,7 @@ exports.register = async (req, res, next) => {
             action: 'REGISTER_FAILURE',
             severity: 'warning',
             ipAddress: req.ip || req.connection.remoteAddress,
-            details: { email, error: err.message }
+            details: { email: req.body.email, error: err.message }
         });
 
         res.status(400).json({

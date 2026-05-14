@@ -13,6 +13,7 @@ const crypto = require('crypto');
 
 // Initialize express app
 const app = express();
+app.set('trust proxy', 1); // Enable trust proxy for Render/Proxies
 
 // Set static folder for uploads - Consolidated to single path
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
